@@ -42,11 +42,11 @@ void GlobalOptimization::inputOdom(double t, Eigen::Vector3d OdomP, Eigen::Quate
 	mPoseMap.lock();
     vector<double> localPose{OdomP.x(), OdomP.y(), OdomP.z(), 
     					     OdomQ.w(), OdomQ.x(), OdomQ.y(), OdomQ.z()};
-    localPoseMap[t] = localPose;
+    localPoseMap[t] = localPose;//t[s]时刻的vio-pose
 
 
     Eigen::Quaterniond globalQ;
-    globalQ = WGPS_T_WVIO.block<3, 3>(0, 0) * OdomQ;
+    globalQ = WGPS_T_WVIO.block<3, 3>(0, 0) * OdomQ;//取WGPS_T_WVIO的旋转矩阵
     Eigen::Vector3d globalP = WGPS_T_WVIO.block<3, 3>(0, 0) * OdomP + WGPS_T_WVIO.block<3, 1>(0, 3);
     vector<double> globalPose{globalP.x(), globalP.y(), globalP.z(),
                               globalQ.w(), globalQ.x(), globalQ.y(), globalQ.z()};
@@ -82,7 +82,7 @@ void GlobalOptimization::inputGPS(double t, double latitude, double longitude, d
 	GPS2XYZ(latitude, longitude, altitude, xyz);
 	vector<double> tmp{xyz[0], xyz[1], xyz[2], posAccuracy};
     //printf("new gps: t: %f x: %f y: %f z:%f \n", t, tmp[0], tmp[1], tmp[2]);
-	GPSPositionMap[t] = tmp;
+	GPSPositionMap[t] = tmp;//t[s]时刻的gps-pose   //map<double, vector<double>>  // format t, tx,ty,tz,qw,qx,qy,qz
     newGPS = true;
 
 }

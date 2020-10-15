@@ -67,9 +67,10 @@ void publish_car_model(double t, Eigen::Vector3d t_w_car, Eigen::Quaterniond q_w
     car_mesh.scale.y = major_scale;
     car_mesh.scale.z = major_scale;
     markerArray_msg.markers.push_back(car_mesh);
-    pub_car.publish(markerArray_msg);
+    pub_car.publish(markerArray_msg);//pub-topic:"car_model"
 }
 
+//callback of topic "/gps"
 void GPS_callback(const sensor_msgs::NavSatFixConstPtr &GPS_msg)
 {
     //printf("gps_callback! \n");
@@ -78,6 +79,7 @@ void GPS_callback(const sensor_msgs::NavSatFixConstPtr &GPS_msg)
     m_buf.unlock();
 }
 
+//callback of topic "/vins_estimator/odometry"
 void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
 {
     //printf("vio_callback! \n");
@@ -137,8 +139,8 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
     odometry.pose.pose.orientation.y = global_q.y();
     odometry.pose.pose.orientation.z = global_q.z();
     odometry.pose.pose.orientation.w = global_q.w();
-    pub_global_odometry.publish(odometry);
-    pub_global_path.publish(*global_path);
+    pub_global_odometry.publish(odometry);//pub-topic:"global_odometry"
+    pub_global_path.publish(*global_path);//pub-topic:"global_path"
     publish_car_model(t, global_t, global_q);
 
 
