@@ -1,0 +1,4 @@
+# pack-refs with: peeled fully-peeled sorted 
+0729736ad4f75dd33d2937963f518418e43d6761 refs/remotes/origin/maplab
+8485a4d9c359b7e486ad019a10815ecb8fd1257f refs/remotes/origin/master
+83a0500a776d6e036a47c9866e2a3883f6fdba57 refs/remotes/origin/static_init

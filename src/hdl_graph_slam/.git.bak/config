@@ -1,0 +1,14 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+[remote "origin"]
+	url = https://github.com/Soaringls/hdl_graph_slam.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "master"]
+	remote = origin
+	merge = refs/heads/master
+[remote "author"]
+	url = https://github.com/koide3/hdl_graph_slam.git
+	fetch = +refs/heads/*:refs/remotes/author/*
