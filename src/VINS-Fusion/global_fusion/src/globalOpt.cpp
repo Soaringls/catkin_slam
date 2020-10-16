@@ -104,6 +104,7 @@ void GlobalOptimization::optimize()
             //options.max_solver_time_in_seconds = SOLVER_TIME * 3;
             options.max_num_iterations = 5;
             ceres::Solver::Summary summary;
+
             ceres::LossFunction *loss_function;
             loss_function = new ceres::HuberLoss(1.0);
             ceres::LocalParameterization* local_parameterization = new ceres::QuaternionParameterization();
@@ -125,6 +126,7 @@ void GlobalOptimization::optimize()
                 q_array[i][1] = iter->second[4];
                 q_array[i][2] = iter->second[5];
                 q_array[i][3] = iter->second[6];
+                //待优化参数, 即待优化pose
                 problem.AddParameterBlock(q_array[i], 4, local_parameterization);
                 problem.AddParameterBlock(t_array[i], 3);
             }
@@ -140,20 +142,29 @@ void GlobalOptimization::optimize()
                 {
                     Eigen::Matrix4d wTi = Eigen::Matrix4d::Identity();
                     Eigen::Matrix4d wTj = Eigen::Matrix4d::Identity();
+                    //wTi t时刻 vrotation
                     wTi.block<3, 3>(0, 0) = Eigen::Quaterniond(iterVIO->second[3], iterVIO->second[4], 
                                                                iterVIO->second[5], iterVIO->second[6]).toRotationMatrix();
+                    //wTi t时刻 translation
                     wTi.block<3, 1>(0, 3) = Eigen::Vector3d(iterVIO->second[0], iterVIO->second[1], iterVIO->second[2]);
+                    
+                    
+                    //wTj t+1时刻 rotation
                     wTj.block<3, 3>(0, 0) = Eigen::Quaterniond(iterVIONext->second[3], iterVIONext->second[4], 
                                                                iterVIONext->second[5], iterVIONext->second[6]).toRotationMatrix();
+                    //wTj t+1时刻 translation
                     wTj.block<3, 1>(0, 3) = Eigen::Vector3d(iterVIONext->second[0], iterVIONext->second[1], iterVIONext->second[2]);
+                    
+                    //vio's pose  trans
                     Eigen::Matrix4d iTj = wTi.inverse() * wTj;
                     Eigen::Quaterniond iQj;
                     iQj = iTj.block<3, 3>(0, 0);
                     Eigen::Vector3d iPj = iTj.block<3, 1>(0, 3);
 
-                    ceres::CostFunction* vio_function = RelativeRTError::Create(iPj.x(), iPj.y(), iPj.z(),
+                    ceres::CostFunction* vio_function = ////input measurement of VIO's trans
+                                                        RelativeRTError::Create(iPj.x(), iPj.y(), iPj.z(),
                                                                                 iQj.w(), iQj.x(), iQj.y(), iQj.z(),
-                                                                                0.1, 0.01);
+                                                                                0.1, 0.01);//var of translation and rotation
                     problem.AddResidualBlock(vio_function, NULL, q_array[i], t_array[i], q_array[i+1], t_array[i+1]);
 
                     /*
@@ -189,7 +200,8 @@ void GlobalOptimization::optimize()
                 iterGPS = GPSPositionMap.find(t);
                 if (iterGPS != GPSPositionMap.end())
                 {
-                    ceres::CostFunction* gps_function = TError::Create(iterGPS->second[0], iterGPS->second[1], 
+                    ceres::CostFunction* gps_function = //input measurement of GPS, data format: x y z pos_variance
+                                                        TError::Create(iterGPS->second[0], iterGPS->second[1], 
                                                                        iterGPS->second[2], iterGPS->second[3]);
                     //printf("inverse weight %f \n", iterGPS->second[3]);
                     problem.AddResidualBlock(gps_function, loss_function, t_array[i]);
@@ -231,7 +243,8 @@ void GlobalOptimization::optimize()
             	    WVIO_T_body.block<3, 3>(0, 0) = Eigen::Quaterniond(localPoseMap[t][3], localPoseMap[t][4], 
             	                                                       localPoseMap[t][5], localPoseMap[t][6]).toRotationMatrix();
             	    WVIO_T_body.block<3, 1>(0, 3) = Eigen::Vector3d(localPoseMap[t][0], localPoseMap[t][1], localPoseMap[t][2]);
-            	    WGPS_T_body.block<3, 3>(0, 0) = Eigen::Quaterniond(globalPose[3], globalPose[4], 
+            	    
+                    WGPS_T_body.block<3, 3>(0, 0) = Eigen::Quaterniond(globalPose[3], globalPose[4], 
             	                                                        globalPose[5], globalPose[6]).toRotationMatrix();
             	    WGPS_T_body.block<3, 1>(0, 3) = Eigen::Vector3d(globalPose[0], globalPose[1], globalPose[2]);
             	    WGPS_T_WVIO = WGPS_T_body * WVIO_T_body.inverse();
