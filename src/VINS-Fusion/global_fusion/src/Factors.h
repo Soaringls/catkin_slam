@@ -23,13 +23,13 @@ void QuaternionInverse(const T q[4], T q_inverse[4])
 };
 
 
-struct TError
+struct TError//GPS
 {
 	TError(double t_x, double t_y, double t_z, double var)
 				  :t_x(t_x), t_y(t_y), t_z(t_z), var(var){}
 
 	template <typename T>
-	bool operator()(const T* tj, T* residuals) const
+	bool operator()(const T* tj, T* residuals) const //待优化变量tj   误差redisuals
 	{
 		residuals[0] = (tj[0] - T(t_x)) / T(var);//prediction - measurement
 		residuals[1] = (tj[1] - T(t_y)) / T(var);
@@ -42,7 +42,7 @@ struct TError
 	                                   const double var) 
 	{
 	  return (new ceres::AutoDiffCostFunction<
-	          TError, 3, 3>(
+	          TError, 3, 3>(//operator()中residuals 和 各个参数的维度, 即residuals和tj的维度
 	          	new TError(t_x, t_y, t_z, var)));
 	}
 
@@ -60,9 +60,9 @@ struct RelativeRTError
 				   t_var(t_var), q_var(q_var){}
 
 	template <typename T>
-	bool operator()(const T* const w_q_i, const T* ti, //t1 gps's q and t
-	                const T*       w_q_j, const T* tj, //t2 gps's q and t
-					T* residuals) const
+	bool operator()(const T* const w_q_i, const T* ti, //t1 gps's q and t 待优化变量ti时刻pose   
+	                const T*       w_q_j, const T* tj, //t2 gps's q and t 待优化变量tj时刻pose
+					T* residuals) const //误差redisuals
 	{
 		T t_w_ij[3];//下一时刻j / 当前时刻i 的坐标， trans of gps measurement
 		t_w_ij[0] = tj[0] - ti[0];
@@ -108,7 +108,7 @@ struct RelativeRTError
 			const double t_var, const double q_var) 
 	{
 	  return (new ceres::AutoDiffCostFunction<
-	          RelativeRTError, 6, 4, 3, 4, 3>(
+	          RelativeRTError, 6, 4, 3, 4, 3>(//operator()中residuals 和 各个参数的维度, 即residuals和w_q_i ti w_q_j tj的维度
 	          	new RelativeRTError(t_x, t_y, t_z, q_w, q_x, q_y, q_z, t_var, q_var)));
 	}
     
