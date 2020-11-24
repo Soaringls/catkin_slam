@@ -58,6 +58,7 @@ private:
     std::deque<sensor_msgs::PointCloud2> cloudQueue;
     sensor_msgs::PointCloud2 currentCloudMsg;
     
+    //补偿点云的imu信息 源自角速度
     double *imuTime = new double[queueLength];
     double *imuRotX = new double[queueLength];
     double *imuRotY = new double[queueLength];
@@ -67,13 +68,14 @@ private:
     bool firstPointFlag;
     Eigen::Affine3f transStartInverse;
 
-    pcl::PointCloud<PointXYZIRT>::Ptr laserCloudIn;
-    pcl::PointCloud<PointType>::Ptr   fullCloud;
+    pcl::PointCloud<PointXYZIRT>::Ptr laserCloudIn;//原始scan
+    pcl::PointCloud<PointType>::Ptr   fullCloud;   //补偿点云, 且索引已与原始scan不一样
     pcl::PointCloud<PointType>::Ptr   extractedCloud;
-
+    cv::Mat rangeMat;//原始scan映射的matrix,值为range
     int deskewFlag;
-    cv::Mat rangeMat;
+    
 
+    //odomTopic+"_incremental"的pose中提取的scan首位时间戳pose的trans, roll/pitch/yaw的Incre不使用
     bool odomDeskewFlag;
     float odomIncreX;
     float odomIncreY;
@@ -149,21 +151,21 @@ public:
         imuQueue.push_back(thisImu);
 
         // debug IMU data
-        // cout << std::setprecision(6);
-        // cout << "IMU acc: " << endl;
-        // cout << "x: " << thisImu.linear_acceleration.x << 
-        //       ", y: " << thisImu.linear_acceleration.y << 
-        //       ", z: " << thisImu.linear_acceleration.z << endl;
-        // cout << "IMU gyro: " << endl;
-        // cout << "x: " << thisImu.angular_velocity.x << 
-        //       ", y: " << thisImu.angular_velocity.y << 
-        //       ", z: " << thisImu.angular_velocity.z << endl;
-        // double imuRoll, imuPitch, imuYaw;
-        // tf::Quaternion orientation;
-        // tf::quaternionMsgToTF(thisImu.orientation, orientation);
-        // tf::Matrix3x3(orientation).getRPY(imuRoll, imuPitch, imuYaw);
-        // cout << "IMU roll pitch yaw: " << endl;
-        // cout << "roll: " << imuRoll << ", pitch: " << imuPitch << ", yaw: " << imuYaw << endl << endl;
+        cout << std::setprecision(6);
+        cout << "IMU acc: " << endl;
+        cout << "x: " << thisImu.linear_acceleration.x << 
+              ", y: " << thisImu.linear_acceleration.y << 
+              ", z: " << thisImu.linear_acceleration.z << endl;
+        cout << "IMU gyro: " << endl;
+        cout << "x: " << thisImu.angular_velocity.x << 
+              ", y: " << thisImu.angular_velocity.y << 
+              ", z: " << thisImu.angular_velocity.z << endl;
+        double imuRoll, imuPitch, imuYaw;
+        tf::Quaternion orientation;
+        tf::quaternionMsgToTF(thisImu.orientation, orientation);
+        tf::Matrix3x3(orientation).getRPY(imuRoll, imuPitch, imuYaw);
+        cout << "IMU roll pitch yaw: " << endl;
+        cout << "roll: " << imuRoll << ", pitch: " << imuPitch << ", yaw: " << imuYaw << endl << endl;
     }
 
     void odometryHandler(const nav_msgs::Odometry::ConstPtr& odometryMsg)
@@ -177,10 +179,10 @@ public:
         if (!cachePointCloud(laserCloudMsg))
             return;
 
-        if (!deskewInfo())
+        if (!deskewInfo())//获取点云补偿需要的roll pitch yaw以及odom位移信息
             return;
 
-        projectPointCloud();
+        projectPointCloud();//生成rangeMat 和 fullCloud
 
         cloudExtraction();
 
@@ -208,51 +210,56 @@ public:
         // timeScanEnd = timeScanCur + (float)laserCloudIn->points.back().t / 1000000000.0; // Ouster
 
         // check dense flag
-        if (laserCloudIn->is_dense == false)
         {
-            ROS_ERROR("Point cloud is not in dense format, please remove NaN points first!");
-            ros::shutdown();
-        }
-
-        // check ring channel
-        static int ringFlag = 0;
-        if (ringFlag == 0)
-        {
-            ringFlag = -1;
-            for (int i = 0; i < (int)currentCloudMsg.fields.size(); ++i)
+            if (laserCloudIn->is_dense == false)
             {
-                if (currentCloudMsg.fields[i].name == "ring")
-                {
-                    ringFlag = 1;
-                    break;
-                }
-            }
-            if (ringFlag == -1)
-            {
-                ROS_ERROR("Point cloud ring channel not available, please configure your point cloud data!");
+                ROS_ERROR("Point cloud is not in dense format, please remove NaN points first!");
                 ros::shutdown();
             }
-        }   
-
-        // check point time
-        if (deskewFlag == 0)
-        {
-            deskewFlag = -1;
-            for (int i = 0; i < (int)currentCloudMsg.fields.size(); ++i)
+    
+            // check ring channel
+            static int ringFlag = 0;
+            if (ringFlag == 0)
             {
-                if (currentCloudMsg.fields[i].name == timeField)
+                ringFlag = -1;
+                for (int i = 0; i < (int)currentCloudMsg.fields.size(); ++i)
                 {
-                    deskewFlag = 1;
-                    break;
+                    if (currentCloudMsg.fields[i].name == "ring")
+                    {
+                        ringFlag = 1;
+                        break;
+                    }
                 }
+                if (ringFlag == -1)
+                {
+                    ROS_ERROR("Point cloud ring channel not available, please configure your point cloud data!");
+                    ros::shutdown();
+                }
+            }   
+    
+            // check point time
+            if (deskewFlag == 0)
+            {
+                deskewFlag = -1;
+                for (int i = 0; i < (int)currentCloudMsg.fields.size(); ++i)
+                {
+                    if (currentCloudMsg.fields[i].name == timeField)//time
+                    {
+                        deskewFlag = 1;
+                        break;
+                    }
+                }
+                if (deskewFlag == -1)
+                    ROS_WARN("Point cloud timestamp not available, deskew function disabled, system will drift significantly!");
             }
-            if (deskewFlag == -1)
-                ROS_WARN("Point cloud timestamp not available, deskew function disabled, system will drift significantly!");
         }
+        
 
         return true;
     }
-
+    
+    
+    //获取对点云做补偿时需要的imu信息
     bool deskewInfo()
     {
         std::lock_guard<std::mutex> lock1(imuLock);
@@ -264,18 +271,15 @@ public:
             ROS_DEBUG("Waiting for IMU data ...");
             return false;
         }
-
-        imuDeskewInfo();//提供点云补偿需要的 roll pitch yaw变化
-
+        imuDeskewInfo(); //提供点云补偿需要的 roll pitch yaw信息(每帧开始时刻都为0)
         odomDeskewInfo();//提供点云补偿需要的 delta_x delta_y delta_z变化
-
         return true;
     }
-
+    //提供当前帧点云 time_start到time_end期间各时刻对应的roll pitch yaw(每帧开始时刻都为0),from angular-velocity of imu
     void imuDeskewInfo()
     {
         cloudInfo.imuAvailable = false;
-
+        //checkout imu data
         while (!imuQueue.empty())
         {
             if (imuQueue.front().header.stamp.toSec() < timeScanCur - 0.01)//timeScanCur当前帧点云时间戳
@@ -283,9 +287,7 @@ public:
             else
                 break;
         }
-
-        if (imuQueue.empty())
-            return;
+        if (imuQueue.empty()) return;
 
         imuPointerCur = 0;
         //当前帧点云从开始到结束对应的imu的姿态
@@ -295,8 +297,10 @@ public:
             double currentImuTime = thisImuMsg.header.stamp.toSec();
 
             // get roll, pitch, and yaw estimation for this scan
-            if (currentImuTime <= timeScanCur)
+            if (currentImuTime <= timeScanCur){
+                //imu_msg姿态中的roll pitch yaw
                 imuRPY2rosRPY(&thisImuMsg, &cloudInfo.imuRollInit, &cloudInfo.imuPitchInit, &cloudInfo.imuYawInit);
+            }
 
             if (currentImuTime > timeScanEnd + 0.01)
                 break;
@@ -311,14 +315,14 @@ public:
             }
 
             // get angular velocity
-            double angular_x, angular_y, angular_z;
-            imuAngular2rosAngular(&thisImuMsg, &angular_x, &angular_y, &angular_z);
+            double gyro_velocity_x, gyro_velocity_y, gyro_velocity_z;
+            imuAngular2rosAngular(&thisImuMsg, &gyro_velocity_x, &gyro_velocity_y, &gyro_velocity_z);//imu_msg中的角速度
 
             // integrate rotation
             double timeDiff = currentImuTime - imuTime[imuPointerCur-1];
-            imuRotX[imuPointerCur] = imuRotX[imuPointerCur-1] + angular_x * timeDiff;
-            imuRotY[imuPointerCur] = imuRotY[imuPointerCur-1] + angular_y * timeDiff;
-            imuRotZ[imuPointerCur] = imuRotZ[imuPointerCur-1] + angular_z * timeDiff;
+            imuRotX[imuPointerCur] = imuRotX[imuPointerCur-1] + gyro_velocity_x * timeDiff;
+            imuRotY[imuPointerCur] = imuRotY[imuPointerCur-1] + gyro_velocity_y * timeDiff;
+            imuRotZ[imuPointerCur] = imuRotZ[imuPointerCur-1] + gyro_velocity_z * timeDiff;
             imuTime[imuPointerCur] = currentImuTime;
             ++imuPointerCur;
         }
@@ -328,10 +332,10 @@ public:
         if (imuPointerCur <= 0)
             return;
 
-        cloudInfo.imuAvailable = true;
+        cloudInfo.imuAvailable = true;//补偿点云的imu信息可用
     }
-
-    void odomDeskewInfo()//提供当前帧点云 time_start到time_end期间lidar的位移 即odomIncreX, odomIncreY, odomIncreZ
+    //提供当前帧点云 time_start到time_end期间lidar的位移 即odomIncreX, odomIncreY, odomIncreZ
+    void odomDeskewInfo()
     {
         cloudInfo.odomAvailable = false;
 
@@ -343,28 +347,21 @@ public:
                 break;
         }
 
-        if (odomQueue.empty())
-            return;
+        if (odomQueue.empty()) return;
 
-        if (odomQueue.front().header.stamp.toSec() > timeScanCur)
-            return;
+        if (odomQueue.front().header.stamp.toSec() > timeScanCur) return;
 
         // get start odometry at the beinning of the scan
         nav_msgs::Odometry startOdomMsg;
-
         for (int i = 0; i < (int)odomQueue.size(); ++i)
         {
             startOdomMsg = odomQueue[i];//odom_pose from topic:"lio_sam/odomTopic_incremental"
-
-            if (ROS_TIME(&startOdomMsg) < timeScanCur)
-                continue;
-            else
-                break;
+            if (ROS_TIME(&startOdomMsg) < timeScanCur) continue;
+            else break;
         }
 
         tf::Quaternion orientation;
         tf::quaternionMsgToTF(startOdomMsg.pose.pose.orientation, orientation);
-
         double roll, pitch, yaw;
         tf::Matrix3x3(orientation).getRPY(roll, pitch, yaw);
 
@@ -375,35 +372,28 @@ public:
         cloudInfo.initialGuessRoll  = roll;
         cloudInfo.initialGuessPitch = pitch;
         cloudInfo.initialGuessYaw   = yaw;
-
         cloudInfo.odomAvailable = true;
 
         // get end odometry at the end of the scan
         odomDeskewFlag = false;
-
-        if (odomQueue.back().header.stamp.toSec() < timeScanEnd)
-            return;
-
+        if (odomQueue.back().header.stamp.toSec() < timeScanEnd) return;
         nav_msgs::Odometry endOdomMsg;
-
         for (int i = 0; i < (int)odomQueue.size(); ++i)
         {
             endOdomMsg = odomQueue[i];
-
-            if (ROS_TIME(&endOdomMsg) < timeScanEnd)
-                continue;
-            else
-                break;
+            if (ROS_TIME(&endOdomMsg) < timeScanEnd) continue;
+            else break;
         }
 
-        if (int(round(startOdomMsg.pose.covariance[0])) != int(round(endOdomMsg.pose.covariance[0])))
-            return;
+        if (int(round(startOdomMsg.pose.covariance[0])) != int(round(endOdomMsg.pose.covariance[0]))) return;
 
-        Eigen::Affine3f transBegin = pcl::getTransformation(startOdomMsg.pose.pose.position.x, startOdomMsg.pose.pose.position.y, startOdomMsg.pose.pose.position.z, roll, pitch, yaw);
+        Eigen::Affine3f transBegin = pcl::getTransformation(startOdomMsg.pose.pose.position.x, startOdomMsg.pose.pose.position.y, 
+                                                            startOdomMsg.pose.pose.position.z, roll, pitch, yaw);
 
         tf::quaternionMsgToTF(endOdomMsg.pose.pose.orientation, orientation);
         tf::Matrix3x3(orientation).getRPY(roll, pitch, yaw);
-        Eigen::Affine3f transEnd = pcl::getTransformation(endOdomMsg.pose.pose.position.x, endOdomMsg.pose.pose.position.y, endOdomMsg.pose.pose.position.z, roll, pitch, yaw);
+        Eigen::Affine3f transEnd = pcl::getTransformation(endOdomMsg.pose.pose.position.x, endOdomMsg.pose.pose.position.y, 
+                                                          endOdomMsg.pose.pose.position.z, roll, pitch, yaw);
 
         Eigen::Affine3f transBt = transBegin.inverse() * transEnd;
 
@@ -412,7 +402,9 @@ public:
 
         odomDeskewFlag = true;
     }
-
+    
+    
+    //获取补偿每个点时需要的roll pitch yaw(第一个点的姿态为初始姿态，都为0)
     void findRotation(double pointTime, float *rotXCur, float *rotYCur, float *rotZCur)
     {
         *rotXCur = 0; *rotYCur = 0; *rotZCur = 0;
@@ -439,7 +431,7 @@ public:
             *rotZCur = imuRotZ[imuPointerFront] * ratioFront + imuRotZ[imuPointerBack] * ratioBack;
         }
     }
-
+    //当前posXCur posYCur  posZCur均返回0
     void findPosition(double relTime, float *posXCur, float *posYCur, float *posZCur)
     {
         *posXCur = 0; *posYCur = 0; *posZCur = 0;
@@ -455,11 +447,11 @@ public:
         // *posYCur = ratio * odomIncreY;
         // *posZCur = ratio * odomIncreZ;
     }
-
+    //补偿每个点
     PointType deskewPoint(PointType *point, double relTime)
     {
-        if (deskewFlag == -1 || cloudInfo.imuAvailable == false)
-            return *point;
+        //deskewFlag为1时表示scan中每个点有时间戳
+        if (deskewFlag == -1 || cloudInfo.imuAvailable == false) return *point;
 
         double pointTime = timeScanCur + relTime;
 
@@ -478,7 +470,7 @@ public:
         // transform points to start
         Eigen::Affine3f transFinal = pcl::getTransformation(posXCur, posYCur, posZCur, rotXCur, rotYCur, rotZCur);
         Eigen::Affine3f transBt = transStartInverse * transFinal;
-
+        //补偿当前点, 相当于每个点左乘transBt
         PointType newPoint;
         newPoint.x = transBt(0,0) * point->x + transBt(0,1) * point->y + transBt(0,2) * point->z + transBt(0,3);
         newPoint.y = transBt(1,0) * point->x + transBt(1,1) * point->y + transBt(1,2) * point->z + transBt(1,3);
@@ -501,36 +493,27 @@ public:
             thisPoint.intensity = laserCloudIn->points[i].intensity;
 
             float range = pointDistance(thisPoint);
-            if (range < lidarMinRange || range > lidarMaxRange)
-                continue;
-
+            if (range < lidarMinRange || range > lidarMaxRange) continue;
+            //每个点对应的ring-id-->作为行号
             int rowIdn = laserCloudIn->points[i].ring;
-            if (rowIdn < 0 || rowIdn >= N_SCAN)//vlp-16: N_SCAN 16
-                continue;
-
-            if (rowIdn % downsampleRate != 0)
-                continue;
-
+            if (rowIdn < 0 || rowIdn >= N_SCAN) continue; //vlp-16: N_SCAN 16
+            if (rowIdn % downsampleRate != 0) continue;
+            //每个点对应的列的id, lidar从lidar-frame的x轴负方向顺时针开始(0->>1800)
             float horizonAngle = atan2(thisPoint.x, thisPoint.y) * 180 / M_PI;
-
             static float ang_res_x = 360.0/float(Horizon_SCAN);//vlp-16: Horizon_SCAN 1800
             int columnIdn = -round((horizonAngle-90.0)/ang_res_x) + Horizon_SCAN/2;
-            if (columnIdn >= Horizon_SCAN)
-                columnIdn -= Horizon_SCAN;
-
-            if (columnIdn < 0 || columnIdn >= Horizon_SCAN)
-                continue;
-
-            if (rangeMat.at<float>(rowIdn, columnIdn) != FLT_MAX)
-                continue;
+            if (columnIdn >= Horizon_SCAN) columnIdn -= Horizon_SCAN;
+            if (columnIdn < 0 || columnIdn >= Horizon_SCAN) continue;
+            if (rangeMat.at<float>(rowIdn, columnIdn) != FLT_MAX) continue;
 
             thisPoint = deskewPoint(&thisPoint, laserCloudIn->points[i].time); // Velodyne  校正当前帧的每个点 运动补偿
             // thisPoint = deskewPoint(&thisPoint, (float)laserCloudIn->points[i].t / 1000000000.0); // Ouster
-
+            
+            //lidar-msg---->matrix
             rangeMat.at<float>(rowIdn, columnIdn) = range;
 
             int index = columnIdn + rowIdn * Horizon_SCAN;
-            fullCloud->points[index] = thisPoint;
+            fullCloud->points[index] = thisPoint;//matirx中序列计算的index重新存储当前点(即同一点与laserCloudIn中index不一样了)
         }
     }
 
@@ -538,7 +521,7 @@ public:
     {
         int count = 0;
         // extract segmented cloud for lidar odometry
-        for (int i = 0; i < N_SCAN; ++i)
+        for (int i = 0; i < N_SCAN; ++i)//0->15
         {
             cloudInfo.startRingIndex[i] = count - 1 + 5;
 
