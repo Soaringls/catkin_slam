@@ -39,10 +39,10 @@ public:
 
     FeatureExtraction()
     {
-        //sub
+        //-------->sub
         subLaserCloudInfo = nh.subscribe<lio_sam::cloud_info>("lio_sam/deskew/cloud_info", 1, 
                                &FeatureExtraction::laserCloudInfoHandler, this, ros::TransportHints().tcpNoDelay());
-        //pub
+        //-------->pub
         pubLaserCloudInfo = nh.advertise<lio_sam::cloud_info> ("lio_sam/feature/cloud_info", 1);
         pubCornerPoints = nh.advertise<sensor_msgs::PointCloud2>("lio_sam/feature/cloud_corner", 1);
         pubSurfacePoints = nh.advertise<sensor_msgs::PointCloud2>("lio_sam/feature/cloud_surface", 1);
@@ -109,12 +109,12 @@ public:
         for (int i = 5; i < cloudSize - 6; ++i)
         {
             // occluded points
-            float depth1 = cloudInfo.pointRange[i];
+            float depth1 = cloudInfo.pointRange[i];//1->28800点 1->1800为同一scan-line第一行， 1801->3600同一scan-line第二行
             float depth2 = cloudInfo.pointRange[i+1];
-            int columnDiff = std::abs(int(cloudInfo.pointColInd[i+1] - cloudInfo.pointColInd[i]));
+            int columnDiff = std::abs(int(cloudInfo.pointColInd[i+1] - cloudInfo.pointColInd[i]));//pointColInd 每个点列的index[0->1799]
 
             if (columnDiff < 10){
-                // 10 pixel diff in range image
+                // 10 pixel diff in range image 参见zhangji's loam paper Fig4-b
                 if (depth1 - depth2 > 0.3){
                     cloudNeighborPicked[i - 5] = 1;
                     cloudNeighborPicked[i - 4] = 1;
@@ -131,7 +131,7 @@ public:
                     cloudNeighborPicked[i + 6] = 1;
                 }
             }
-            // parallel beam
+            // parallel beam 参见zhangji's loam paper Fig4-a
             float diff1 = std::abs(float(cloudInfo.pointRange[i-1] - cloudInfo.pointRange[i]));
             float diff2 = std::abs(float(cloudInfo.pointRange[i+1] - cloudInfo.pointRange[i]));
 
@@ -148,13 +148,13 @@ public:
         pcl::PointCloud<PointType>::Ptr surfaceCloudScan(new pcl::PointCloud<PointType>());
         pcl::PointCloud<PointType>::Ptr surfaceCloudScanDS(new pcl::PointCloud<PointType>());
 
-        for (int i = 0; i < N_SCAN; i++)
+        for (int i = 0; i < N_SCAN; i++)//N_SCAN = 16
         {
             surfaceCloudScan->clear();
 
             for (int j = 0; j < 6; j++)
             {
-
+                //每个scanline的点划分为6个片段，sp和ep为当前片段点的起始索引
                 int sp = (cloudInfo.startRingIndex[i] * (6 - j) + cloudInfo.endRingIndex[i] * j) / 6;
                 int ep = (cloudInfo.startRingIndex[i] * (5 - j) + cloudInfo.endRingIndex[i] * (j + 1)) / 6 - 1;
 
@@ -162,7 +162,7 @@ public:
                     continue;
 
                 std::sort(cloudSmoothness.begin()+sp, cloudSmoothness.begin()+ep, by_value());
-
+                //find the edge points
                 int largestPickedNum = 0;
                 for (int k = ep; k >= sp; k--)
                 {
@@ -194,7 +194,7 @@ public:
                         }
                     }
                 }
-
+                //find the planar points
                 for (int k = sp; k <= ep; k++)
                 {
                     int ind = cloudSmoothness[k].ind;
@@ -229,14 +229,14 @@ public:
                         surfaceCloudScan->push_back(extractedCloud->points[k]);
                     }
                 }
-            }
+            }//每个scan-line分的6个片段结束
 
             surfaceCloudScanDS->clear();
             downSizeFilter.setInputCloud(surfaceCloudScan);
             downSizeFilter.filter(*surfaceCloudScanDS);
 
             *surfaceCloud += *surfaceCloudScanDS;
-        }
+        }//16个scan-line 即 beam遍历结束
     }
 
     void freeCloudInfoMemory()

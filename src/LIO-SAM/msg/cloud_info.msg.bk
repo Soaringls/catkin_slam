@@ -10,13 +10,13 @@ float32[] pointRange # point range
 
 #################deskew pointcloud###################ImageProjection
 # Attitude for LOAM initialization
-#ImageProjection进行更新  每一帧开始时时间对齐对应的imu_msg姿态中的roll pitch yaw
+#ImageProjection进行更新  每一帧开始时时间对齐对应的imu_msg姿态中获取的roll pitch yaw
 int64 imuAvailable   #true 表示补偿点云的imu信息可用
 float32 imuRollInit
 float32 imuPitchInit
 float32 imuYawInit
 # Initial guess from imu pre-integration
-#ImageProjection进行更新  每一帧开始时时间对齐对应的msg from topic:"lio_sam/odomTopic_incremental"
+#ImageProjection进行更新  每一帧开始时时间对齐对应的msg from topic:"/odometry/imu_incremental"
 int64 odomAvailable    #true 表示补偿点云的odom信息可用
 float32 initialGuessX
 float32 initialGuessY
