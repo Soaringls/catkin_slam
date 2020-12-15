@@ -1,0 +1,32 @@
+float64 range_00#: 5.100000000
+float64 range_01
+float64 range_02
+float64 range_03
+float64 range_04
+float64 range_05
+float64 range_06
+float64 range_07
+float64 range_08
+float64 range_09
+float64 range_10
+float64 range_11
+float64 range_12
+float64 range_13
+float64 range_14
+float64 range_15
+int32 status_00#: 1
+int32 status_01
+int32 status_02
+int32 status_03
+int32 status_04
+int32 status_05
+int32 status_06
+int32 status_07
+int32 status_08
+int32 status_09
+int32 status_10
+int32 status_11
+int32 status_12
+int32 status_13
+int32 status_14
+int32 status_15

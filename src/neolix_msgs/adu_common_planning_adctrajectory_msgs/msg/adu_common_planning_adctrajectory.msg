@@ -1,0 +1,4 @@
+std_msgs/Header header
+adu_common_planning_adctrajectory_msgs/header adc_header
+adu_common_planning_adctrajectory_msgs/adc_path_point[] adc_path_point
+adu_common_planning_adctrajectory_msgs/adc_trajectory_point[] adc_trajectory_point

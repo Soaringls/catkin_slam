@@ -1,0 +1,5 @@
+int32 init_pose_source#: GNSS_HEADING
+int32 local_search_from_integpva_status#: INIT_TERMINATED
+int32 local_search_from_file_status#: INIT_TERMINATED
+int32 local_update_from_file_status#: INIT_SUCCESSFUL
+int32 user_interaction_status#: INIT_WAITING

@@ -1,0 +1,14 @@
+std_msgs/Header header
+baidu_idl_car_canbus_pbcarstatus_msgs/safety safety
+baidu_idl_car_canbus_pbcarstatus_msgs/gear gear
+baidu_idl_car_canbus_pbcarstatus_msgs/ems ems                              
+baidu_idl_car_canbus_pbcarstatus_msgs/gas gas
+baidu_idl_car_canbus_pbcarstatus_msgs/epb epb
+baidu_idl_car_canbus_pbcarstatus_msgs/brake brake                             
+baidu_idl_car_canbus_pbcarstatus_msgs/vehicle_spd vehicle_spd
+baidu_idl_car_canbus_pbcarstatus_msgs/eps eps
+baidu_idl_car_canbus_pbcarstatus_msgs/battery battery
+baidu_idl_car_canbus_pbcarstatus_msgs/handshake handshake
+baidu_idl_car_canbus_pbcarstatus_msgs/license_new license_new
+baidu_idl_car_canbus_pbcarstatus_msgs/ultrasonic ultrasonic
+baidu_idl_car_canbus_pbcarstatus_msgs/aeb aeb

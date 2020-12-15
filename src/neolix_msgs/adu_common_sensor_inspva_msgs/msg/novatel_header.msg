@@ -1,0 +1,12 @@
+int32 id#: 507
+int32 msg_type#: 0
+int32 port_addr#: 96
+int32 length#: 88
+int32 sequence#: 0
+int32 idle_time#: 71
+int32 time_status#: 180
+int32 gps_week#: 2118
+int64 gps_week_milliseconds#: 223122590
+int32 receiver_status#: 0
+int32 reserved#: 0
+int32 software_version#: 0

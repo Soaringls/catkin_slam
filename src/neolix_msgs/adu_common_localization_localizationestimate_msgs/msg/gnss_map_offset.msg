@@ -1,0 +1,2 @@
+int32 status#: MSF_LOCAL_GNSS_MAP_OFFSET_NORMAL
+float64 offsetx#: 0.000000000

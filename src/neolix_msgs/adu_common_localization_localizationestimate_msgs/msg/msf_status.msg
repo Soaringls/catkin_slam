@@ -1,0 +1,7 @@
+int32 local_lidar_status#: MSF_LOCAL_LIDAR_NORMAL
+int32 gnsspos_position_type#: 50
+int32 heading_position_type#: 50
+int32 msf_init_status#: MSF_ALIGNED_GOOD
+int32 msf_running_status#: MSF_SOL_LIDAR_GNSS
+adu_common_localization_localizationestimate_msgs/msf_init_details msf_init_details
+adu_common_localization_localizationestimate_msgs/gnss_map_offset gnss_map_offset

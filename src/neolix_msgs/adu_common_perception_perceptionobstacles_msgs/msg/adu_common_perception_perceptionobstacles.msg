@@ -1,0 +1,4 @@
+std_msgs/Header header
+adu_common_perception_perceptionobstacles_msgs/obstacles_header obstacles_header
+adu_common_perception_perceptionobstacles_msgs/perception_obstacle[] perception_obstacle
+int32 error_code

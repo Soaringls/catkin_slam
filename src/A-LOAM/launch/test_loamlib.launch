@@ -1,0 +1,5 @@
+<launch>
+ 
+    <node pkg="aloam_velodyne" type="aloam" name="aloam" output="screen"  />
+
+</launch>

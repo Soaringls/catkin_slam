@@ -1,0 +1,320 @@
+ChannelName: /perception/obstacles
+MessageType: adu.common.perception.PerceptionObstacles
+FrameRatio: 0.00
+RawMessage Size: 1435 Bytes (1.40 KB)
+perception_obstacle: +[3 items]
+header:
+  timestamp_sec: 1597154271.079323530
+  module_name: perception_obstacle
+  sequence_num: 3140
+  lidar_timestamp: 1597154270752367104
+  camera_timestamp: 0
+  radar_timestamp: 0
+  
+ChannelName: /sensor/lslidar/patrol/obstacles
+MessageType: adu.common.perception.PerceptionObstacles
+FrameRatio: 0.00
+RawMessage Size: 1186 Bytes (1.16 KB)
+perception_obstacle: +[23 items]
+header:
+  timestamp_sec: 1598960889.724079370
+error_code: ERROR_NONE
+
+
+
+
+
+
+
+
+ChannelName: /localization/100hz/localization_pose
+MessageType: adu.common.localization.LocalizationEstimate
+FrameRatio: 0.00
+RawMessage Size: 275 Bytes
+header:
+  timestamp_sec: 1597154274.667686224
+  module_name: perception_localization_100hz
+  sequence_num: 43508
+pose: 
+  position: 
+    x: 366570.266140689
+    y: 3453219.279926711
+    z: 15.476581009
+  orientation: 
+    qx: 0.006136531
+    qy: 0.005391447
+    qz: -0.629630756
+    qw: 0.776851586
+  linear_velocity:
+    x: 1.169062689
+    y: 0.235685209
+    z: 0.429176629
+  linear_acceleration:
+    x: -0.163833673
+    y: -0.130939103
+    z: 9.655315232
+  angular_velocity: 
+    x: 0.005822300
+    y: -0.000577157
+    z: -0.003148407
+  angular_velocity_vrf:
+    x: -0.003135851
+measurement_time: 1597154276.019999981
+sensor_status: 
+  imu_delay_status: IMU_DELAY_1
+  imu_missing_status: IMU_MISSING_NORMAL
+msf_status: 
+  local_lidar_status: MSF_LOCAL_LIDAR_NORMAL
+  gnsspos_position_type: 50
+  heading_position_type: 50
+  msf_init_status: MSF_ALIGNED_GOOD
+  msf_running_status: MSF_SOL_LIDAR_GNSS
+  msf_init_details:
+    init_pose_source: GNSS_HEADING
+    local_search_from_integpva_status: INIT_TERMINATED
+    local_search_from_file_status: INIT_TERMINATED
+    local_update_from_file_status: INIT_SUCCESSFUL
+    user_interaction_status: INIT_WAITING
+  gnss_map_offset: 
+    status: MSF_LOCAL_GNSS_MAP_OFFSET_NORMAL
+    offsetx: 0.000000000
+
+
+
+
+
+ChannelName: /pnc/control
+MessageType: adu.common.control.ControlCommand
+FrameRatio: 0.00
+RawMessage Size: 203 Bytes
+header: 
+  timestamp_sec: 1597154279.156658411
+  module_name: control
+  sequence_num: 45650
+  lidar_timestamp: 1597154278251906048
+  camera_timestamp: 0
+  finish_time: 1597154279.156658411
+  depended_modules: +[1 items]
+throttle: 2.807692100
+brake: 0.000000000
+steering_rate: 72.000000000
+steering_target: -0.418964290
+high_beam: 0
+low_beam: 0
+left_turn: 0
+right_turn: 0
+driving_mode: COMPLETE_AUTO_DRIVE
+gear_location: GEAR_DRIVE
+contrl_context: 
+  lat_ctrl_ctx: 
+    heading_error: -0.005947530
+    lateral_error: -0.011697174
+    steer_angle: -0.418964290
+  long_ctrl_ctx: 
+    station_error: 1.002792280
+    speed_error: -0.185253655
+    throttle: 2.807692100
+    brake: 0.000000000
+  speed_limit: 6.000000000
+  throttle_limit: 30.000000000
+
+
+
+
+
+
+ChannelName: /localization/lidar/odometry
+MessageType: adu.common.Odometry
+FrameRatio: 0.00
+RawMessage Size: 228 Bytes
+header: 
+  timestamp_sec: 1597154280.788217306
+  module_name: lidar_odometry
+  sequence_num: 4586
+  start_time: 1597154280.651757956
+  finish_time: 1597154280.751750946
+  frame_id: 1597154280.651758
+child_frame_id: 1597154280.751751
+pose: 
+  pose: 
+    position: 
+      x: -0.010318350
+      y: 0.014303060
+      z: 0.024697552
+    orientation:
+      qx: -0.001877991
+      qy: 0.000044020
+      qz: 0.000021285
+      qw: 0.999998235
+  covariance: +[1 items]
+twist: 
+  twist: 
+    linear: 
+      x: 0.000000000
+      y: 0.000000000
+      z: 0.000000000
+    angular:
+      x: 0.000000000
+      y: 0.000000000
+      z: 0.000000000
+
+
+
+ChannelName: /sensor/novatel/Heading
+MessageType: adu.common.sensor.Heading
+ChannelName: /sensor/novatel/Heading
+MessageType: adu.common.sensor.Heading
+FrameRatio: 0.00
+RawMessage Size: 113 Bytes
+novatel_header:
+  id: 971
+  msg_type: 0
+  port_addr: 64
+  length: 44
+  sequence: 0
+  idle_time: 107
+  time_status: 180
+  gps_week: 2118
+  gps_week_milliseconds: 223101800
+  receiver_status: 33554432
+  reserved: 8873
+  software_version: 14968
+solution_status: 0
+position_type: 50
+baseline_length: 1.903911
+heading: 77.860397
+pitch: 2.289480
+reserved: 0.000000
+heading_std_dev: 0.184546
+pitch_std_dev: 0.606427
+station_id: I24X^^^\^\^Z^D
+satellite_tracked_number: 30
+satellite_soulution_number: 28
+satellite_number_obs: 28
+satellite_number_multi: 26
+solution_source: 4
+extended_solution_status: 0
+galileo_beidou_sig_mask: 48
+gps_glonass_sig_mask: 51
+header: 
+  timestamp_sec: 1597154283.827220678
+
+
+
+
+
+
+
+
+
+
+
+
+
+MessageType: baidu.idl_car.canbus.Pbwheelspeed
+FrameRatio: 0.00
+RawMessage Size: 85 Bytes
+header:
+  timestamp_sec: 1598319293.773754358
+  module_name: wheelspeed
+  sequence_num: 329654
+VehicleSpeedValid: 0
+VehicleSpeed: 0.000000
+WheelSpeed_FL_Valid: 1
+WheelSpeed_FL: 0.000000
+WheelSpeed_FR_Valid: 1
+WheelSpeed_FR: 0.000000
+WheelSpeed_Front: 0.000000
+WheelSpeed_RL_Valid: 1
+WheelSpeed_RL: 0.000000
+WheelSpeed_RR_Valid: 1
+WheelSpeed_RR: 0.000000
+WheelSpeed_Rear: 15.000000
+Wheel_FL_Status: 2
+Wheel_FR_Status: 2
+Wheel_RL_Status: 2
+Wheel_RR_Status: 2
+VehicleRealDirect: 2
+
+
+
+
+
+
+ChannelName: /adu/carall
+MessageType: baidu.idl_car.canbus.PbCarStatus
+FrameRatio: 0.00
+RawMessage Size: 359 Bytes
+safety:
+  driving_mode: 1
+  chassis_msg_recv_time: 1597154293239730
+  vehicle_whole_fault_level: 5
+  drive_system_fault_level: 0
+  high_voltage_battery_fault_level: 0
+  steering_system_fault_level: 0
+  parking_system_fault_level: 0
+  brake_system_fault_level: 0
+gear:
+  gear_state: GEAR_DRIVE
+ems:
+  engine_rpm: 371.000000000
+gas:
+  throttle_output: 0.000000000
+epb:
+  epb_status: 0
+  parking_brake_status: PBRAKE_OFF
+brake:
+  brake_output: 0.000000000
+vehicle_spd:
+  vehicle_spd: 1.390625000
+eps:
+  steering_angle: 36.062500000
+battery:
+  battery_percent: 43.000000000
+  charge_state: 1
+handshake:
+  is_eps_online: 1
+  is_epb_online: 1
+  is_esp_online: 1
+  is_vcu_online: 1
+license_new: 
+  vin: LHT4B2A11KC7BA001
+  parse_success: 1
+  current_ind: 34
+  vin_msg_recv_time: 1597153821269953
+ultrasonic:
+  range_00: 5.100000000
+  range_01: 5.100000000
+  range_02: 5.000000000
+  range_03: 5.000000000
+  range_04: 5.100000000
+  range_05: 5.100000000
+  range_06: 5.100000000
+  range_07: 5.100000000
+  range_08: 5.100000000
+  range_09: 5.100000000
+  range_10: 5.100000000
+  range_11: 5.100000000
+  range_12: 5.100000000
+  range_13: 5.100000000
+  range_14: 5.100000000
+  range_15: 5.100000000
+  status_00: 1
+  status_01: 1
+  status_02: 0
+  status_03: 0
+  status_04: 1
+  status_05: 1
+  status_06: 1
+  status_07: 1
+  status_08: 1
+  status_09: 0
+  status_10: 1
+  status_11: 1
+  status_12: 1
+  status_13: 0
+  status_14: 1
+  status_15: 1
+aeb:
+  aeb_state: 1
+  aeb_brake_state: 0

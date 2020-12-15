@@ -1,0 +1,6 @@
+geometry_msgs/Point position
+geometry_msgs/Quaternion orientation
+geometry_msgs/Vector3 linear_velocity
+geometry_msgs/Vector3 linear_acceleration
+geometry_msgs/Vector3 angular_velocity
+std_msgs/Float32 angular_velocity_vrf

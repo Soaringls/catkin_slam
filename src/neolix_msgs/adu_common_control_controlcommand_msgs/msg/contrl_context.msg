@@ -1,0 +1,4 @@
+adu_common_control_controlcommand_msgs/lat_ctrl_ctx lat_ctrl_ctx
+adu_common_control_controlcommand_msgs/long_ctrl_ctx long_ctrl_ctx
+float64 speed_limit#: 6.000000000
+float64 throttle_limit#: 30.000000000

@@ -1,0 +1,6 @@
+std_msgs/Header header
+adu_prediction_predictionobstacles_msgs/obstacles_header obstacles_header
+adu_prediction_predictionobstacles_msgs/prediction_obstacle[] prediction_obstacle
+int32 perception_error_code
+float64 start_timestamp
+float64 end_timestamp

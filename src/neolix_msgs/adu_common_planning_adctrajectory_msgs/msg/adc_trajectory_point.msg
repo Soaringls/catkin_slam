@@ -1,0 +1,11 @@
+float64 x#: 366585.928706610
+float64 y#: 3453222.338106388
+float64 z#: 0.000000000
+float64 speed#: 1.350958272
+float64 acceleration_s#: -0.324093859
+float64 curvature#: -0.002322430
+float64 curvature_change_rate#: 0.000000000
+float64 relative_time#: 0.000000000
+float64 theta#: 0.199748335
+float64 accumulated_s#: 0.000004144
+int32 max_throttle_limit#: 1
