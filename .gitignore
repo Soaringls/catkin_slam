@@ -1,0 +1,6 @@
+.vscode/
+.idea/
+cmake-build-debug/
+src/A-LOAM/.vscode
+src/LIO-SAM/.vscode
+src/hdl_graph_slam/.vscode
