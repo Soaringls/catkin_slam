@@ -1,5 +1,15 @@
 # LeGO-LOAM
 
+### add by lyu
+```sh
+catkin_make
+roslaunch lego_loam run.launch
+rosbag play data/lego_loam/2017-06-08-15-49-45_0.bag  --clock --topic /velodyne_points /imu/data
+#odom-path(featureAssociation.cpp)    yellow
+#refined-path(mapOptimization.cpp)    red
+#fusion-path(transfromFusion.cpp)     green
+```
+
 This repository contains code for a lightweight and ground optimized lidar odometry and mapping (LeGO-LOAM) system for ROS compatible UGVs. The system takes in point cloud  from a Velodyne VLP-16 Lidar (palced horizontally) and optional IMU data as inputs. It outputs 6D pose estimation in real-time. A demonstration of the system can be found here -> https://www.youtube.com/watch?v=O3tz_ftHV48
 <!--
 [![Watch the video](/LeGO-LOAM/launch/demo.gif)](https://www.youtube.com/watch?v=O3tz_ftHV48)

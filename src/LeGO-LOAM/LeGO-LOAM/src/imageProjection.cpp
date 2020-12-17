@@ -56,7 +56,7 @@ class ImageProjection {
 
   pcl::PointCloud<PointType>::Ptr
       fullCloud;  // projected velodyne raw cloud, but saved in the form of 1-D
-                  // matrix
+                  // matrix, intensity - rawIdn + columnIdn/10000
   pcl::PointCloud<PointType>::Ptr
       fullInfoCloud;  // same as fullCloud, but with intensity - range
 
@@ -286,7 +286,7 @@ class ImageProjection {
     //  0, initial value, after validation, means not ground
     //  1, ground
     for (size_t j = 0; j < Horizon_SCAN; ++j) {
-      for (size_t i = 0; i < groundScanInd; ++i) {
+      for (size_t i = 0; i < groundScanInd; ++i) {  // VLP-16 groundScanInd = 7
         lowerInd = j + (i)*Horizon_SCAN;
         upperInd = j + (i + 1) * Horizon_SCAN;
 
@@ -303,7 +303,7 @@ class ImageProjection {
 
         angle = atan2(diffZ, sqrt(diffX * diffX + diffY * diffY)) * 180 / M_PI;
 
-        if (abs(angle - sensorMountAngle) <= 10) {
+        if (abs(angle - sensorMountAngle) <= 10) {  // sensorMountAngle=0
           groundMat.at<int8_t>(i, j) = 1;
           groundMat.at<int8_t>(i + 1, j) = 1;
         }
@@ -316,8 +316,8 @@ class ImageProjection {
     for (size_t i = 0; i < N_SCAN; ++i) {
       for (size_t j = 0; j < Horizon_SCAN; ++j) {
         if (groundMat.at<int8_t>(i, j) == 1 ||
-            rangeMat.at<float>(i, j) == FLT_MAX) {
-          labelMat.at<int>(i, j) = -1;
+            rangeMat.at<float>(i, j) == FLT_MAX) {  // rangeMat default FLT_MAX
+          labelMat.at<int>(i, j) = -1;              // labelMat default 0
         }
       }
     }
@@ -332,6 +332,7 @@ class ImageProjection {
   }
 
   void cloudSegmentation() {
+    // labelMat default 0  -1表示地面点
     // segmentation process
     for (size_t i = 0; i < N_SCAN; ++i)
       for (size_t j = 0; j < Horizon_SCAN; ++j)
@@ -479,46 +480,52 @@ class ImageProjection {
   void publishCloud() {
     // 1. Publish Seg Cloud Info
     segMsg.header = cloudHeader;
-    pubSegmentedCloudInfo.publish(segMsg);
+    pubSegmentedCloudInfo.publish(segMsg);  // cloud_info.msg
     // 2. Publish clouds
     sensor_msgs::PointCloud2 laserCloudTemp;
 
     pcl::toROSMsg(*outlierCloud, laserCloudTemp);
     laserCloudTemp.header.stamp = cloudHeader.stamp;
     laserCloudTemp.header.frame_id = "base_link";
-    pubOutlierCloud.publish(laserCloudTemp);
-    // segmented cloud with ground
+    pubOutlierCloud.publish(laserCloudTemp);  //离群点
+
+    // segmented cloud with ground------------------------------------1
     pcl::toROSMsg(*segmentedCloud, laserCloudTemp);
     laserCloudTemp.header.stamp = cloudHeader.stamp;
     laserCloudTemp.header.frame_id = "base_link";
-    pubSegmentedCloud.publish(laserCloudTemp);
-    // projected full cloud
-    if (pubFullCloud.getNumSubscribers() != 0) {
-      pcl::toROSMsg(*fullCloud, laserCloudTemp);
-      laserCloudTemp.header.stamp = cloudHeader.stamp;
-      laserCloudTemp.header.frame_id = "base_link";
-      pubFullCloud.publish(laserCloudTemp);
-    }
-    // original dense ground cloud
+    pubSegmentedCloud.publish(
+        laserCloudTemp);  //"segmented_cloud" 包含地面点的分割结果
+
+    // original dense ground cloud------------------------------------2
     if (pubGroundCloud.getNumSubscribers() != 0) {
       pcl::toROSMsg(*groundCloud, laserCloudTemp);
       laserCloudTemp.header.stamp = cloudHeader.stamp;
       laserCloudTemp.header.frame_id = "base_link";
-      pubGroundCloud.publish(laserCloudTemp);
+      pubGroundCloud.publish(laserCloudTemp);  //"ground_cloud" 地面点
     }
-    // segmented cloud without ground
+
+    // segmented cloud without ground---------------------------------3
     if (pubSegmentedCloudPure.getNumSubscribers() != 0) {
       pcl::toROSMsg(*segmentedCloudPure, laserCloudTemp);
       laserCloudTemp.header.stamp = cloudHeader.stamp;
       laserCloudTemp.header.frame_id = "base_link";
-      pubSegmentedCloudPure.publish(laserCloudTemp);
+      pubSegmentedCloudPure.publish(
+          laserCloudTemp);  // "segmented_cloud_pure"不含地面点的分割结果
     }
+
     // projected full cloud info
     if (pubFullInfoCloud.getNumSubscribers() != 0) {
       pcl::toROSMsg(*fullInfoCloud, laserCloudTemp);
       laserCloudTemp.header.stamp = cloudHeader.stamp;
       laserCloudTemp.header.frame_id = "base_link";
       pubFullInfoCloud.publish(laserCloudTemp);
+    }
+    // projected full cloud
+    if (pubFullCloud.getNumSubscribers() != 0) {
+      pcl::toROSMsg(*fullCloud, laserCloudTemp);
+      laserCloudTemp.header.stamp = cloudHeader.stamp;
+      laserCloudTemp.header.frame_id = "base_link";
+      pubFullCloud.publish(laserCloudTemp);
     }
   }
 };
