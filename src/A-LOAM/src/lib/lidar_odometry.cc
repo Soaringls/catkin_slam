@@ -8,12 +8,12 @@ LidarOdometry::LidarOdometry() {
   memcpy(para_q, q_temp, sizeof(q_temp));
   double t_temp[3] = {0.0, 0.0, 0.0};  // x y z w
   memcpy(para_t, t_temp, sizeof(t_temp));
-  q_last_curr = Eigen::Map<Eigen::Quaterniond>(para_q);
-  t_last_curr = Eigen::Map<Eigen::Vector3d>(para_t);
+  tf_q_ = Eigen::Map<Eigen::Quaterniond>(para_q);
+  tf_t_ = Eigen::Map<Eigen::Vector3d>(para_t);
 
   // transformation from current frame to world frame
-  q_w_curr = Eigen::Quaterniond(1, 0, 0, 0);
-  t_w_curr = Eigen::Vector3d(0, 0, 0);
+  odom_q_ = Eigen::Quaterniond(1, 0, 0, 0);
+  odom_t_ = Eigen::Vector3d(0, 0, 0);
 
   LOG(INFO) << "construct success!";
 }
@@ -60,8 +60,8 @@ void LidarOdometry::transformToStart(PointType const *const pi,
     s = 1.0;
   // s = 1;
   Eigen::Quaterniond q_point_last =
-      Eigen::Quaterniond::Identity().slerp(s, q_last_curr);
-  Eigen::Vector3d t_point_last = s * t_last_curr;
+      Eigen::Quaterniond::Identity().slerp(s, tf_q_);
+  Eigen::Vector3d t_point_last = s * tf_t_;
   Eigen::Vector3d point(pi->x, pi->y, pi->z);
   Eigen::Vector3d un_point = q_point_last * point + t_point_last;
 
@@ -89,7 +89,7 @@ void LidarOdometry::Process() {
   kdtreeSurfLast->setInputCloud(laserCloudSurfLast);
 
   auto seg_msgs = DataCenter::Instance()->GetScanSegMsg();
-  seg_msgs->setPose(t_w_curr, q_w_curr);
+  seg_msgs->setPose(odom_t_, odom_q_);
 
   LOG(INFO) << std::fixed << std::setprecision(6)
             << "laser-odometry elapsed time:" << elapsed_time.end() << " [ms]";
@@ -340,9 +340,12 @@ void LidarOdometry::calculateTransformation() {
     LOG(INFO) << "solver elapsed:" << elapse_time.end() << " [ms]";
   }
   LOG(INFO) << "optimization  elapsed:" << opti_time.end() << " [ms]";
-  t_last_curr = Eigen::Vector3d(para_t[0], para_t[1], para_t[2]);
-  q_last_curr = Eigen::Quaterniond(para_q[3], para_q[0], para_q[1], para_q[2]);
-  t_w_curr = t_w_curr + q_w_curr * t_last_curr;
-  q_w_curr = q_w_curr * q_last_curr;
+  tf_t_ = Eigen::Vector3d(para_t[0], para_t[1], para_t[2]);
+  tf_q_ = Eigen::Quaterniond(para_q[3], para_q[0], para_q[1], para_q[2]);
+  
+  //odom_t_  odom_q_计算顺序不影响
+  // odom_q_ = odom_q_ * tf_q_;//
+  odom_t_ = odom_t_ + odom_q_ * tf_t_;
+  odom_q_ = odom_q_ * tf_q_;
 }
 }  // namespace ceres_loam

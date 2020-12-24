@@ -25,7 +25,21 @@ class LoamOdometry {
   const PointCloudPtr GetSurroundMap() {
     return lidar_refination_.GenerateSurroundMap();
   }
+  // odom coarse pose
+  const Eigen::Affine3d GetOdomCoarsePose() {
+    auto odom_q_ = lidar_odom_.GetQuaternion();
+    auto odom_t_ = lidar_odom_.GetPos();
+
+    Eigen::Affine3d result =
+        Eigen::Translation3d(odom_t_.x(), odom_t_.y(), odom_t_.z()) *
+        odom_q_.normalized();
+    return result;
+  }
+  // mapping refined pose
+  const Eigen::Affine3d GetRefinedPose() { return lidar_refination_.GetPose(); }
+  // odom refined pose
   const Eigen::Affine3d GetPose() { return lidar_odom_.GetRefinedPose(); }
+  // odom refined tf
   const Eigen::Affine3d GetTransfromation() {
     static Eigen::Affine3d last_pose = Eigen::Affine3d::Identity();
     Eigen::Affine3d pose = lidar_odom_.GetRefinedPose();

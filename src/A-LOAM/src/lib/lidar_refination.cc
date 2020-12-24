@@ -10,14 +10,18 @@ LidarRefination::LidarRefination() {
   double opti_params[7] = {0, 0, 0, 1, 0, 0, 0};
   memcpy(parameters, opti_params, sizeof(opti_params));
 
-  q_wmap_wodom = Eigen::Quaterniond(1, 0, 0, 0);
-  t_wmap_wodom = Eigen::Vector3d(0, 0, 0);
+  correct_q_ = Eigen::Quaterniond(1, 0, 0, 0);
+  correct_t_ = Eigen::Vector3d(0, 0, 0);
 
   double lineRes = 0.2;
   voxel_filter_corner_.setLeafSize(lineRes, lineRes, lineRes);
   double planeRes = 0.4;
   voxel_filter_surf_.setLeafSize(planeRes, planeRes, planeRes);
 
+  // test odom_pose, correct_pose, refined_pose;
+  odom_pose = Eigen::Affine3d::Identity();
+  correct_pose = Eigen::Affine3d::Identity();
+  refined_pose = Eigen::Affine3d::Identity();
   LOG(INFO) << __FUNCTION__ << ":construct success!";
 }
 
@@ -63,15 +67,16 @@ void LidarRefination::accessData() {
 
   cloud_full_res->clear();
   cloud_full_res = msgs->laserCloud;
-  t_wodom_curr = msgs->odom_to_init_t;
-  q_wodom_curr = msgs->odom_to_init_q;
+  odom_t_ = msgs->odom_to_init_t;
+  odom_q_ = msgs->odom_to_init_q;
 }
 
 void LidarRefination::accessAvailableCubicNum(int &scans_valid_num,
                                               int &sub_scan_valid_num) {
-  LOG(INFO) << __FUNCTION__ << ":laserCloudCenWidth-H-D1:" << laserCloudCenWidth
-            << ", " << laserCloudCenHeight << ", "
-            << laserCloudCenDepth;  // 10 10 5
+  // LOG(INFO) << __FUNCTION__ << ":laserCloudCenWidth-H-D1:" <<
+  // laserCloudCenWidth
+  //           << ", " << laserCloudCenHeight << ", "
+  //           << laserCloudCenDepth;  // 10 10 5
   int centerCubeI = int((t_w_curr_.x() + CubeSize / 2) / CubeSize) +
                     laserCloudCenWidth;  // init 10
   int centerCubeJ = int((t_w_curr_.y() + CubeSize / 2) / CubeSize) +
@@ -119,8 +124,8 @@ void LidarRefination::accessAvailableCubicNum(int &scans_valid_num,
     centerCubeI++;
     laserCloudCenWidth++;
   }
-  LOG(INFO) << __FUNCTION__ << ":centerCubeI-J-K-3:" << centerCubeI << ", "
-            << centerCubeJ << ", " << centerCubeK;
+  // LOG(INFO) << __FUNCTION__ << ":centerCubeI-J-K-3:" << centerCubeI << ", "
+  //           << centerCubeJ << ", " << centerCubeK;
 
   while (centerCubeI >= laserCloudWidth - 3) {
     for (int j = 0; j < laserCloudHeight; j++) {
@@ -156,8 +161,8 @@ void LidarRefination::accessAvailableCubicNum(int &scans_valid_num,
     centerCubeI--;
     laserCloudCenWidth--;
   }
-  LOG(INFO) << __FUNCTION__ << ":centerCubeI-J-K-4:" << centerCubeI << ", "
-            << centerCubeJ << ", " << centerCubeK;
+  // LOG(INFO) << __FUNCTION__ << ":centerCubeI-J-K-4:" << centerCubeI << ", "
+  //           << centerCubeJ << ", " << centerCubeK;
   while (centerCubeJ < 3) {
     for (int i = 0; i < laserCloudWidth; i++) {
       for (int k = 0; k < laserCloudDepth; k++) {
@@ -298,12 +303,12 @@ void LidarRefination::accessAvailableCubicNum(int &scans_valid_num,
     laserCloudCenDepth--;
   }
 
-  LOG(INFO) << __FUNCTION__
-            << ":accessAvailableCubicNum:laserCloudCenWidth-H-D2:"
-            << laserCloudCenWidth << ", " << laserCloudCenHeight << ", "
-            << laserCloudCenDepth;
-  LOG(INFO) << __FUNCTION__ << ":centerCubeI-J-K-5:" << centerCubeI << ", "
-            << centerCubeJ << ", " << centerCubeK;
+  // LOG(INFO) << __FUNCTION__
+  //           << ":accessAvailableCubicNum:laserCloudCenWidth-H-D2:"
+  //           << laserCloudCenWidth << ", " << laserCloudCenHeight << ", "
+  //           << laserCloudCenDepth;
+  // LOG(INFO) << __FUNCTION__ << ":centerCubeI-J-K-5:" << centerCubeI << ", "
+  //           << centerCubeJ << ", " << centerCubeK;
 
   // for (int i = centerCubeI - 2; i <= centerCubeI + 2; i++) {
   //   for (int j = centerCubeJ - 2; j <= centerCubeJ + 2; j++) {
@@ -330,8 +335,7 @@ void LidarRefination::Process() {
   Timer elapsed_time;
   accessData();
   // set initial guess
-  q_w_curr_ = q_wmap_wodom * q_wodom_curr;
-  t_w_curr_ = q_wmap_wodom * t_wodom_curr + t_wmap_wodom;
+  setInitialGuess();
   // prepare data
   int scans_valid_num = 0;
   int subscans_valid_num = 0;
@@ -432,72 +436,42 @@ void LidarRefination::calculateTransformation() {
   }
 }
 
+void LidarRefination::setInitialGuess() {
+  // initial guess for scan2map optimization
+  q_w_curr_ = correct_q_ * odom_q_;
+  t_w_curr_ = correct_q_ * odom_t_ + correct_t_;
+
+  // test correct my version
+  odom_pose = Eigen::Translation3d(odom_t_.x(), odom_t_.y(), odom_t_.z()) *
+              odom_q_.normalized();
+  refined_pose = odom_pose * correct_pose;
+
+  // LOG(INFO) << std::fixed << std::setprecision(6)
+  //           << "t_w_curr_:" << t_w_curr_.x() << ", " << t_w_curr_.y() << ", "
+  //           << t_w_curr_.z();
+  // LogOutputAffine3dPose("odom_pose", odom_pose);
+  // LogOutputAffine3dPose("correct_pose", correct_pose);
+  // LogOutputAffine3dPose("refined_pose", refined_pose);
+}
+
 void LidarRefination::updateOptimizedResult() {
   // refination global pose, good result
   t_w_curr_ = Eigen::Vector3d(parameters[4], parameters[5], parameters[6]);
   q_w_curr_ = Eigen::Quaterniond(parameters[3], parameters[0], parameters[1],
                                  parameters[2]);
   // correct transform to optimized the global pose of lidar-odom
-  q_wmap_wodom = q_w_curr_ * q_wodom_curr.inverse();
-  t_wmap_wodom = t_w_curr_ - q_wmap_wodom * t_wodom_curr;
+  correct_q_ = q_w_curr_ * odom_q_.inverse();
+  correct_t_ = t_w_curr_ - correct_q_ * odom_t_;
+
+  // test correct my version
+  refined_pose =
+      Eigen::Translation3d(t_w_curr_.x(), t_w_curr_.y(), t_w_curr_.z()) *
+      q_w_curr_.normalized();
+  correct_pose = odom_pose.inverse() * refined_pose;
+  // test end
+
   auto data_center = DataCenter::Instance();
-  data_center->SetOdomCorrectPose(t_wmap_wodom, q_wmap_wodom);
-}
-
-void LidarRefination::addFeatureCloudtoPool() {
-  LOG(INFO) << __FUNCTION__ << ":addFeatureCloudtoPool:laserCloudCenWidth-H-D:"
-            << laserCloudCenWidth << ", " << laserCloudCenHeight << ", "
-            << laserCloudCenDepth;  // 10 10 5
-
-  // add new points for corners_pool
-  PointType point_globis;
-  int num_pts = feature_scan_corner_filtered_->points.size();
-  for (int i = 0; i < num_pts; i++) {
-    pointAssociateToMap(&feature_scan_corner_filtered_->points[i],
-                        &point_globis);
-
-    int cubeI =
-        int((point_globis.x + CubeSize / 2) / CubeSize) + laserCloudCenWidth;
-    int cubeJ =
-        int((point_globis.y + CubeSize / 2) / CubeSize) + laserCloudCenHeight;
-    int cubeK =
-        int((point_globis.z + CubeSize / 2) / CubeSize) + laserCloudCenDepth;
-
-    if (point_globis.x + CubeSize / 2 < 0) cubeI--;
-    if (point_globis.y + CubeSize / 2 < 0) cubeJ--;
-    if (point_globis.z + CubeSize / 2 < 0) cubeK--;
-
-    // 21 21 11
-    if (cubeI >= 0 && cubeI < laserCloudWidth && cubeJ >= 0 &&
-        cubeJ < laserCloudHeight && cubeK >= 0 && cubeK < laserCloudDepth) {
-      int cubeInd = cubeI + laserCloudWidth * cubeJ +
-                    laserCloudWidth * laserCloudHeight * cubeK;
-      corners_pool[cubeInd]->push_back(point_globis);
-    }
-  }
-  // add new points for surfs_pool
-  num_pts = feature_scan_surf_filtered_->points.size();
-  for (int i = 0; i < num_pts; i++) {
-    pointAssociateToMap(&feature_scan_surf_filtered_->points[i], &point_globis);
-
-    int cubeI =
-        int((point_globis.x + CubeSize / 2) / CubeSize) + laserCloudCenWidth;
-    int cubeJ =
-        int((point_globis.y + CubeSize / 2) / CubeSize) + laserCloudCenHeight;
-    int cubeK =
-        int((point_globis.z + CubeSize / 2) / CubeSize) + laserCloudCenDepth;
-
-    if (point_globis.x + CubeSize / 2 < 0) cubeI--;
-    if (point_globis.y + CubeSize / 2 < 0) cubeJ--;
-    if (point_globis.z + CubeSize / 2 < 0) cubeK--;
-
-    if (cubeI >= 0 && cubeI < laserCloudWidth && cubeJ >= 0 &&
-        cubeJ < laserCloudHeight && cubeK >= 0 && cubeK < laserCloudDepth) {
-      int cubeInd = cubeI + laserCloudWidth * cubeJ +
-                    laserCloudWidth * laserCloudHeight * cubeK;
-      surfs_pool[cubeInd]->push_back(point_globis);
-    }
-  }
+  data_center->SetOdomCorrectPose(correct_t_, correct_q_);
 }
 
 void LidarRefination::calculateTransformationCorner(
@@ -597,19 +571,79 @@ void LidarRefination::calculateTransformationSurf(
   }
 }
 
+void LidarRefination::addFeatureCloudtoPool() {
+  LOG(INFO) << __FUNCTION__ << ":addFeatureCloudtoPool:laserCloudCenWidth-H-D:"
+            << laserCloudCenWidth << ", " << laserCloudCenHeight << ", "
+            << laserCloudCenDepth;  // 10 10 5
+
+  // add new points for corners_pool
+  PointType point_globis;
+  int num_pts = feature_scan_corner_filtered_->points.size();
+  for (int i = 0; i < num_pts; i++) {
+    // map from lidar-frame to global frame
+    pointAssociateToMap(&feature_scan_corner_filtered_->points[i],
+                        &point_globis);
+
+    int cubeI = int((point_globis.x + CubeSize / 2) / CubeSize) +
+                laserCloudCenWidth;  // 10
+    int cubeJ = int((point_globis.y + CubeSize / 2) / CubeSize) +
+                laserCloudCenHeight;  // 10
+    int cubeK = int((point_globis.z + CubeSize / 2) / CubeSize) +
+                laserCloudCenDepth;  // 5
+
+    if (point_globis.x + CubeSize / 2 < 0) cubeI--;
+    if (point_globis.y + CubeSize / 2 < 0) cubeJ--;
+    if (point_globis.z + CubeSize / 2 < 0) cubeK--;
+
+    // 21 21 11
+    if (cubeI >= 0 && cubeI < laserCloudWidth && cubeJ >= 0 &&
+        cubeJ < laserCloudHeight && cubeK >= 0 && cubeK < laserCloudDepth) {
+      int cubeInd = cubeI + laserCloudWidth * cubeJ +
+                    laserCloudWidth * laserCloudHeight * cubeK;
+      corners_pool[cubeInd]->push_back(point_globis);
+    } else {
+      LOG(INFO) << __FUNCTION__ << "\033[1;32m---->cubeI-J-K:" << cubeI << ", "
+                << cubeJ << ", " << cubeK << " .\033[0m";
+    }
+  }
+  // add new points for surfs_pool
+  num_pts = feature_scan_surf_filtered_->points.size();
+  for (int i = 0; i < num_pts; i++) {
+    pointAssociateToMap(&feature_scan_surf_filtered_->points[i], &point_globis);
+
+    int cubeI =
+        int((point_globis.x + CubeSize / 2) / CubeSize) + laserCloudCenWidth;
+    int cubeJ =
+        int((point_globis.y + CubeSize / 2) / CubeSize) + laserCloudCenHeight;
+    int cubeK =
+        int((point_globis.z + CubeSize / 2) / CubeSize) + laserCloudCenDepth;
+
+    if (point_globis.x + CubeSize / 2 < 0) cubeI--;
+    if (point_globis.y + CubeSize / 2 < 0) cubeJ--;
+    if (point_globis.z + CubeSize / 2 < 0) cubeK--;
+
+    if (cubeI >= 0 && cubeI < laserCloudWidth && cubeJ >= 0 &&
+        cubeJ < laserCloudHeight && cubeK >= 0 && cubeK < laserCloudDepth) {
+      int cubeInd = cubeI + laserCloudWidth * cubeJ +
+                    laserCloudWidth * laserCloudHeight * cubeK;
+      surfs_pool[cubeInd]->push_back(point_globis);
+    }
+  }
+}
+
 void LidarRefination::downSampleCornerSurfArray(const int scans_valid_num) {
   for (int i = 0; i < scans_valid_num; i++) {
     int ind = scans_valid_indices[i];
 
-    PointCloudPtr tmpCorner(new PointCloud());
+    PointCloudPtr tmp_corner(new PointCloud());
     voxel_filter_corner_.setInputCloud(corners_pool[ind]);
-    voxel_filter_corner_.filter(*tmpCorner);
-    corners_pool[ind] = tmpCorner;
+    voxel_filter_corner_.filter(*tmp_corner);
+    corners_pool[ind] = tmp_corner;
 
-    PointCloudPtr tmpSurf(new PointCloud());
+    PointCloudPtr tmp_surf(new PointCloud());
     voxel_filter_surf_.setInputCloud(surfs_pool[ind]);
-    voxel_filter_surf_.filter(*tmpSurf);
-    surfs_pool[ind] = tmpSurf;
+    voxel_filter_surf_.filter(*tmp_surf);
+    surfs_pool[ind] = tmp_surf;
   }
 }
 
@@ -633,4 +667,12 @@ const PointCloudPtr LidarRefination::GenerateSurroundMap() {
   return surround_map_;
 }
 
+void LogOutputAffine3dPose(const std::string &msgs,
+                           const Eigen::Affine3d pose) {
+  Eigen::Translation3d t(pose.translation());
+  Eigen::Quaterniond q(pose.linear());
+  LOG(INFO) << std::fixed << std::setprecision(6) << msgs << "'t :" << t.x()
+            << ", " << t.y() << ", " << t.z() << ", and qwxyz:" << q.w() << ", "
+            << q.x() << ", " << q.y() << ", " << q.z();
+}
 }  // namespace ceres_loam

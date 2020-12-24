@@ -29,7 +29,8 @@ class LidarRefination {
     Eigen::Affine3d result =
         Eigen::Translation3d(t_w_curr_.x(), t_w_curr_.y(), t_w_curr_.z()) *
         q_w_curr_.normalized();
-    return result;
+    // return result;
+    return refined_pose;
   }
 
   const PointCloudPtr GenerateWholeMap();
@@ -39,10 +40,9 @@ class LidarRefination {
   void allocateMemory();
   void accessData();
   void accessAvailableCubicNum(int &scan_valid_num, int &sub_scan_valid_num);
+
   // use q_w_curr_ t_w_curr_即parameters to convert the point
   void pointAssociateToMap(PointType const *const pi, PointType *const po);
-  void transformUpdate();
-  void transformAssociateToMap();
 
   void addFeatureCloudtoPool();
 
@@ -52,20 +52,24 @@ class LidarRefination {
                                    ceres::LossFunction *loss_function);
   void calculateTransformationCorner(ceres::Problem &problem,
                                      ceres::LossFunction *loss_function);
+  void setInitialGuess();
   void updateOptimizedResult();
+
   void downSampleCornerSurfArray(const int scan_valid_num);
 
  private:
+  Eigen::Affine3d odom_pose, correct_pose, refined_pose;
+
   int laserCloudCenWidth;
   int laserCloudCenHeight;
   int laserCloudCenDepth;
 
   // global pose of lidar-odom assign by odom
-  Eigen::Vector3d t_wodom_curr;
-  Eigen::Quaterniond q_wodom_curr;
+  Eigen::Vector3d odom_t_;
+  Eigen::Quaterniond odom_q_;
   // intermediate variable
-  Eigen::Vector3d t_wmap_wodom;
-  Eigen::Quaterniond q_wmap_wodom;
+  Eigen::Vector3d correct_t_;
+  Eigen::Quaterniond correct_q_;
 
   pcl::VoxelGrid<PointType> voxel_filter_corner_;
   pcl::VoxelGrid<PointType> voxel_filter_surf_;
@@ -97,4 +101,5 @@ class LidarRefination {
   PointCloudPtr surfs_pool[laserCloudNum];
   PointCloudPtr globis_map;
 };
+void LogOutputAffine3dPose(const std::string &msgs, const Eigen::Affine3d pose);
 }  // namespace ceres_loam

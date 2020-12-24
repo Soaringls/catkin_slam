@@ -29,7 +29,13 @@ find_package(GTSAM REQUIRED QUIET)
 add_message_files(
   DIRECTORY msg
   FILES
-  cloud_info.msg
+  cloud_info.msg##
+  adu_common_sensor_inspva.msg##
+  novatel_header.msg
+  adu_common_odometry.msg##
+  odom_header.msg
+  odom_pose.msg
+  odom_twist.msg
 )
 
 generate_messages(

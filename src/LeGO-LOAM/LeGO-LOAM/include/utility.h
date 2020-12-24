@@ -37,13 +37,14 @@
 #include <thread>
 #include <vector>
 
-#include "cloud_msgs/cloud_info.h"
+#include "lego_loam_cloud_msgs/cloud_info.h"
 
 #define PI 3.14159265
 
 using namespace std;
 
 typedef pcl::PointXYZI PointType;
+typedef pcl::PointCloud<PointType> PointCloudXYZI;
 
 extern const string pointCloudTopic = "/velodyne_points";
 extern const string imuTopic = "/imu/data";
@@ -133,8 +134,8 @@ extern const float historyKeyframeSearchRadius =
 extern const int historyKeyframeSearchNum =
     25;  // 2n+1 number of hostory key frames will be fused into a submap for
          // loop closure
-extern const float historyKeyframeFitnessScore =
-    0.3;  // the smaller the better alignment
+extern const float loop_align_threshold =
+    0.3;  // the smaller, the better alignment
 
 extern const float globalMapVisualizationSearchRadius =
     500.0;  // key frames with in n meters will be visualized

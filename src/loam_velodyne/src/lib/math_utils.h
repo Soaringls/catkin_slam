@@ -120,7 +120,7 @@ inline float calcSquaredPointDistance(const PointT& p)
 }
 
 
-
+/////////////////////////////////3D rotation///////////////////////////////////////////
 /** \brief Rotate the given vector by the specified angle around the x-axis.
  *
  * @param v the vector to rotate
@@ -132,12 +132,6 @@ inline void rotX(Vector3& v, const Angle& ang)
   v.y() = ang.cos() * y - ang.sin() * v.z();
   v.z() = ang.sin() * y + ang.cos() * v.z();
 }
-
-/** \brief Rotate the given point by the specified angle around the x-axis.
- *
- * @param p the point to rotate
- * @param ang the rotation angle
- */
 template <typename PointT>
 inline void rotX(PointT& p, const Angle& ang)
 {
@@ -158,13 +152,7 @@ inline void rotY(Vector3& v, const Angle& ang)
   float x = v.x();
   v.x() = ang.cos() * x + ang.sin() * v.z();
   v.z() = ang.cos() * v.z() - ang.sin() * x;
-}
-
-/** \brief Rotate the given point by the specified angle around the y-axis.
- *
- * @param p the point to rotate
- * @param ang the rotation angle
- */
+} 
 template <typename PointT>
 inline void rotY(PointT& p, const Angle& ang)
 {
@@ -179,23 +167,23 @@ inline void rotY(PointT& p, const Angle& ang)
  *
  * @param v the vector to rotate
  * @param ang the rotation angle
+ * @//旋转矩阵已已知坐标系为参考->求目标系(仅作为简单验证推到，已目标坐标系为参考更常用)
+ *    cosA  sinA
+ *   -sinA  conA
  */
+//目标坐标系为global, 已知坐标系为lidar,   lidar's frame-->global's frame
 inline void rotZ(Vector3& v, const Angle& ang)
 {
   float x = v.x();
+  //旋转矩阵已目标坐标系为参考->求目标系
   v.x() = ang.cos() * x - ang.sin() * v.y();
   v.y() = ang.sin() * x + ang.cos() * v.y();
-}
-
-/** \brief Rotate the given point by the specified angle around the z-axis.
- *
- * @param p the point to rotate
- * @param ang the rotation angle
- */
+} 
 template <typename PointT>
 inline void rotZ(PointT& p, const Angle& ang)
 {
   float x = p.x;
+  //旋转矩阵已目标坐标系为参考->求目标系
   p.x = ang.cos() * x - ang.sin() * p.y;
   p.y = ang.sin() * x + ang.cos() * p.y;
 }
@@ -217,15 +205,7 @@ inline void rotateZXY(Vector3& v,
   rotZ(v, angZ);
   rotX(v, angX);
   rotY(v, angY);
-}
-
-/** \brief Rotate the given point by the specified angles around the z-, x- respectively y-axis.
- *
- * @param p the point to rotate
- * @param angZ the rotation angle around the z-axis
- * @param angX the rotation angle around the x-axis
- * @param angY the rotation angle around the y-axis
- */
+} 
 template <typename PointT>
 inline void rotateZXY(PointT& p,
                       const Angle& angZ,
@@ -254,15 +234,7 @@ inline void rotateYXZ(Vector3& v,
   rotY(v, angY);
   rotX(v, angX);
   rotZ(v, angZ);
-}
-
-/** \brief Rotate the given point by the specified angles around the y-, x- respectively z-axis.
- *
- * @param p the point to rotate
- * @param angY the rotation angle around the y-axis
- * @param angX the rotation angle around the x-axis
- * @param angZ the rotation angle around the z-axis
- */
+} 
 template <typename PointT>
 inline void rotateYXZ(PointT& p,
                       const Angle& angY,

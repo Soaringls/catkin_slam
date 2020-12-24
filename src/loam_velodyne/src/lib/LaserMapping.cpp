@@ -166,8 +166,9 @@ bool LaserMapping::setup(ros::NodeHandle& node, ros::NodeHandle& privateNode)
    _subLaserOdometry = node.subscribe<nav_msgs::Odometry>
       ("/laser_odom_to_init", 5, &LaserMapping::laserOdometryHandler, this);
 
-   _subLaserCloudFullRes = node.subscribe<sensor_msgs::PointCloud2>
-      ("/velodyne_cloud_3", 2, &LaserMapping::laserCloudFullResHandler, this);
+   
+   // _subLaserCloudFullRes = node.subscribe<sensor_msgs::PointCloud2> //_transformTobeMapped转换当前帧点云-for visualization
+   //    ("/velodyne_cloud_3", 2, &LaserMapping::laserCloudFullResHandler, this); 
 
    // subscribe to IMU topic
    _subImu = node.subscribe<sensor_msgs::Imu>("/imu/data", 50, &LaserMapping::imuHandler, this);
@@ -181,7 +182,7 @@ void LaserMapping::laserCloudCornerLastHandler(const sensor_msgs::PointCloud2Con
 {
    _timeLaserCloudCornerLast = cornerPointsLastMsg->header.stamp;
    laserCloudCornerLast().clear();
-   pcl::fromROSMsg(*cornerPointsLastMsg, laserCloudCornerLast());
+   pcl::fromROSMsg(*cornerPointsLastMsg, laserCloudCornerLast());//_laserCloudCornerLast
    _newLaserCloudCornerLast = true;
 }
 
@@ -193,15 +194,16 @@ void LaserMapping::laserCloudSurfLastHandler(const sensor_msgs::PointCloud2Const
    _newLaserCloudSurfLast = true;
 }
 
-void LaserMapping::laserCloudFullResHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudFullResMsg)
-{
-   _timeLaserCloudFullRes = laserCloudFullResMsg->header.stamp;
-   laserCloud().clear();
-   pcl::fromROSMsg(*laserCloudFullResMsg, laserCloud());
-   _newLaserCloudFullRes = true;
-}
 
-void LaserMapping::laserOdometryHandler(const nav_msgs::Odometry::ConstPtr& laserOdometry)
+// void LaserMapping::laserCloudFullResHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudFullResMsg)
+// {
+//    _timeLaserCloudFullRes = laserCloudFullResMsg->header.stamp;
+//    laserCloud().clear();
+//    pcl::fromROSMsg(*laserCloudFullResMsg, laserCloud());
+//    _newLaserCloudFullRes = true;
+// }
+
+void LaserMapping::laserOdometryHandler(const nav_msgs::Odometry::ConstPtr& laserOdometry)//odom coarse global pose
 {
    _timeLaserOdometry = laserOdometry->header.stamp;
 

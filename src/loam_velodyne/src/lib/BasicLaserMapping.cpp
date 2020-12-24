@@ -100,8 +100,7 @@ BasicLaserMapping::BasicLaserMapping(const float& scanPeriod, const size_t& maxI
 }
 
 
-void BasicLaserMapping::transformAssociateToMap()
-{
+void BasicLaserMapping::transformAssociateToMap(){//首先执行 //san2map前执行,类似aloam's lib的setInitialGuess()
    _transformIncre.pos = _transformBefMapped.pos - _transformSum.pos;
    rotateYXZ(_transformIncre.pos, -(_transformSum.rot_y), -(_transformSum.rot_x), -(_transformSum.rot_z));
 
@@ -125,13 +124,13 @@ void BasicLaserMapping::transformAssociateToMap()
    float caly = _transformAftMapped.rot_y.cos();
    float salz = _transformAftMapped.rot_z.sin();
    float calz = _transformAftMapped.rot_z.cos();
-
+   //set initial-guess _transformTobeMapped's angle
    float srx = -sbcx * (salx*sblx + calx * cblx*salz*sblz + calx * calz*cblx*cblz)
       - cbcx * sbcy*(calx*calz*(cbly*sblz - cblz * sblx*sbly)
                      - calx * salz*(cbly*cblz + sblx * sbly*sblz) + cblx * salx*sbly)
       - cbcx * cbcy*(calx*salz*(cblz*sbly - cbly * sblx*sblz)
                      - calx * calz*(sbly*sblz + cbly * cblz*sblx) + cblx * cbly*salx);
-   _transformTobeMapped.rot_x = -asin(srx);
+   _transformTobeMapped.rot_x = -asin(srx);//rotate by x
 
    float srycrx = sbcx * (cblx*cblz*(caly*salz - calz * salx*saly)
                           - cblx * sblz*(caly*calz + salx * saly*salz) + calx * saly*sblx)
@@ -145,7 +144,7 @@ void BasicLaserMapping::transformAssociateToMap()
                      + (calz*saly - caly * salx*salz)*(cblz*sbly - cbly * sblx*sblz) + calx * caly*cblx*cbly)
       - cbcx * sbcy*((saly*salz + caly * calz*salx)*(cbly*sblz - cblz * sblx*sbly)
                      + (calz*saly - caly * salx*salz)*(cbly*cblz + sblx * sbly*sblz) - calx * caly*cblx*sbly);
-   _transformTobeMapped.rot_y = atan2(srycrx / _transformTobeMapped.rot_x.cos(),
+   _transformTobeMapped.rot_y = atan2(srycrx / _transformTobeMapped.rot_x.cos(),//rotate by y
                                       crycrx / _transformTobeMapped.rot_x.cos());
 
    float srzcrx = (cbcz*sbcy - cbcy * sbcx*sbcz)*(calx*salz*(cblz*sbly - cbly * sblx*sblz)
@@ -158,9 +157,9 @@ void BasicLaserMapping::transformAssociateToMap()
       - (sbcy*sbcz + cbcy * cbcz*sbcx)*(calx*salz*(cblz*sbly - cbly * sblx*sblz)
                                         - calx * calz*(sbly*sblz + cbly * cblz*sblx) + cblx * cbly*salx)
       + cbcx * cbcz*(salx*sblx + calx * cblx*salz*sblz + calx * calz*cblx*cblz);
-   _transformTobeMapped.rot_z = atan2(srzcrx / _transformTobeMapped.rot_x.cos(),
+   _transformTobeMapped.rot_z = atan2(srzcrx / _transformTobeMapped.rot_x.cos(),//rotate by z
                                       crzcrx / _transformTobeMapped.rot_x.cos());
-
+   //set initial-guess _transformTobeMapped's pos
    Vector3 v = _transformIncre.pos;
    rotateZXY(v, _transformTobeMapped.rot_z, _transformTobeMapped.rot_x, _transformTobeMapped.rot_y);
    _transformTobeMapped.pos = _transformAftMapped.pos - v;
@@ -168,8 +167,7 @@ void BasicLaserMapping::transformAssociateToMap()
 
 
 
-void BasicLaserMapping::transformUpdate()
-{
+void BasicLaserMapping::transformUpdate(){//san2map后执行
    if (0 < _imuHistory.size())
    {
       size_t imuIdx = 0;
@@ -199,11 +197,11 @@ void BasicLaserMapping::transformUpdate()
    }
 
    _transformBefMapped = _transformSum;
-   _transformAftMapped = _transformTobeMapped;
+   _transformAftMapped = _transformTobeMapped;//_transformTobeMapped 即为 scan2map优化的结果
 }
 
 
-
+//trans cloud:lidar's frame->global's frame   rotateZXY->add pos
 void BasicLaserMapping::pointAssociateToMap(const pcl::PointXYZI& pi, pcl::PointXYZI& po)
 {
    po.x = pi.x;
@@ -219,7 +217,7 @@ void BasicLaserMapping::pointAssociateToMap(const pcl::PointXYZI& pi, pcl::Point
 }
 
 
-
+//trans cloud:global's frame -> lidar's frame minis pose->rotateYXZ
 void BasicLaserMapping::pointAssociateTobeMapped(const pcl::PointXYZI& pi, pcl::PointXYZI& po)
 {
    po.x = pi.x - _transformTobeMapped.pos.x();
@@ -232,36 +230,37 @@ void BasicLaserMapping::pointAssociateTobeMapped(const pcl::PointXYZI& pi, pcl::
 
 
 
-void BasicLaserMapping::transformFullResToMap()
-{
-   // transform full resolution input cloud to map
-   for (auto& pt : *_laserCloudFullRes)
-      pointAssociateToMap(pt, pt);
-}
+// void BasicLaserMapping::transformFullResToMap()
+// {
+//    // transform full resolution input cloud to map
+//    for (auto& pt : *_laserCloudFullRes)
+//       pointAssociateToMap(pt, pt);
+// }
 
-bool BasicLaserMapping::createDownsizedMap()
-{
-   // create new map cloud according to the input output ratio
-   _mapFrameCount++;
-   if (_mapFrameCount < _mapFrameNum)
-      return false;
+//create submap,which is useless currently
+// bool BasicLaserMapping::createDownsizedMap()
+// {
+//    // create new map cloud according to the input output ratio
+//    _mapFrameCount++;
+//    if (_mapFrameCount < _mapFrameNum)
+//       return false;
 
-   _mapFrameCount = 0;
+//    _mapFrameCount = 0;
 
-   // accumulate map cloud
-   _laserCloudSurround->clear();
-   for (auto ind : _laserCloudSurroundInd)
-   {
-      *_laserCloudSurround += *_laserCloudCornerArray[ind];
-      *_laserCloudSurround += *_laserCloudSurfArray[ind];
-   }
+//    // accumulate map cloud
+//    _laserCloudSurround->clear();
+//    for (auto ind : _laserCloudSurroundInd)
+//    {
+//       *_laserCloudSurround += *_laserCloudCornerArray[ind];
+//       *_laserCloudSurround += *_laserCloudSurfArray[ind];
+//    }
 
-   // down size map cloud
-   _laserCloudSurroundDS->clear();
-   _downSizeFilterCorner.setInputCloud(_laserCloudSurround);
-   _downSizeFilterCorner.filter(*_laserCloudSurroundDS);
-   return true;
-}
+//    // down size map cloud
+//    _laserCloudSurroundDS->clear();
+//    _downSizeFilterCorner.setInputCloud(_laserCloudSurround);
+//    _downSizeFilterCorner.filter(*_laserCloudSurroundDS);
+//    return true;
+// }
 
 bool BasicLaserMapping::process(Time const& laserOdometryTime)
 {
@@ -281,7 +280,7 @@ bool BasicLaserMapping::process(Time const& laserOdometryTime)
 
    for (auto const& pt : _laserCloudCornerLast->points)
    {
-      pointAssociateToMap(pt, pointSel);
+      pointAssociateToMap(pt, pointSel);//使用_transformTobeMapped转换 lidar's frame->global's frame
       _laserCloudCornerStack->push_back(pointSel);
    }
 
@@ -291,7 +290,7 @@ bool BasicLaserMapping::process(Time const& laserOdometryTime)
       _laserCloudSurfStack->push_back(pointSel);
    }
 
-   pcl::PointXYZI pointOnYAxis;
+   pcl::PointXYZI pointOnYAxis;//accessAvailableCubicNum内使用
    pointOnYAxis.x = 0.0;
    pointOnYAxis.y = 10.0;
    pointOnYAxis.z = 0.0;
@@ -307,6 +306,10 @@ bool BasicLaserMapping::process(Time const& laserOdometryTime)
    if (_transformTobeMapped.pos.x() + CUBE_HALF < 0) centerCubeI--;
    if (_transformTobeMapped.pos.y() + CUBE_HALF < 0) centerCubeJ--;
    if (_transformTobeMapped.pos.z() + CUBE_HALF < 0) centerCubeK--;
+   
+
+   //accessAvailableCubicNum
+   {
 
    while (centerCubeI < 3)
    {
@@ -498,6 +501,7 @@ bool BasicLaserMapping::process(Time const& laserOdometryTime)
          }
       }
    }
+   }
 
    // prepare valid map corner and surface cloud for pose optimization
    _laserCloudCornerFromMap->clear();
@@ -510,11 +514,13 @@ bool BasicLaserMapping::process(Time const& laserOdometryTime)
 
    // prepare feature stack clouds for pose optimization
    for (auto& pt : *_laserCloudCornerStack)
-      pointAssociateTobeMapped(pt, pt);
+      pointAssociateTobeMapped(pt, pt);//使用_transformTobeMapped进行翻转  global's frame -> lidar's frame
 
    for (auto& pt : *_laserCloudSurfStack)
       pointAssociateTobeMapped(pt, pt);
 
+
+   ////step _laserCloudCornerStackDS _laserCloudSurfStackDS And feature-map to optimize
    // down sample feature stack clouds
    _laserCloudCornerStackDS->clear();
    _downSizeFilterCorner.setInputCloud(_laserCloudCornerStack);
@@ -529,13 +535,15 @@ bool BasicLaserMapping::process(Time const& laserOdometryTime)
    _laserCloudCornerStack->clear();
    _laserCloudSurfStack->clear();
 
-   // run pose optimization
+   ////step  run pose optimization
    optimizeTransformTobeMapped();
 
+
+   ////step _transformTobeMapped转换_laserCloudCornerStackDS _laserCloudSurfStackDS from lidar's frame to global's frame后存储到cubic中并进行降采样
    // store down sized corner stack points in corresponding cube clouds
    for (int i = 0; i < laserCloudCornerStackNum; i++)
    {
-      pointAssociateToMap(_laserCloudCornerStackDS->points[i], pointSel);
+      pointAssociateToMap(_laserCloudCornerStackDS->points[i], pointSel); 
 
       int cubeI = int((pointSel.x + CUBE_HALF) / CUBE_SIZE) + _laserCloudCenWidth;
       int cubeJ = int((pointSel.y + CUBE_HALF) / CUBE_SIZE) + _laserCloudCenHeight;
@@ -557,7 +565,7 @@ bool BasicLaserMapping::process(Time const& laserOdometryTime)
    // store down sized surface stack points in corresponding cube clouds
    for (int i = 0; i < laserCloudSurfStackNum; i++)
    {
-      pointAssociateToMap(_laserCloudSurfStackDS->points[i], pointSel);
+      pointAssociateToMap(_laserCloudSurfStackDS->points[i], pointSel); 
 
       int cubeI = int((pointSel.x + CUBE_HALF) / CUBE_SIZE) + _laserCloudCenWidth;
       int cubeJ = int((pointSel.y + CUBE_HALF) / CUBE_SIZE) + _laserCloudCenHeight;
@@ -592,8 +600,10 @@ bool BasicLaserMapping::process(Time const& laserOdometryTime)
       _laserCloudSurfArray[ind].swap(_laserCloudSurfDSArray[ind]);
    }
 
-   transformFullResToMap();
-   _downsizedMapCreated = createDownsizedMap();
+
+
+   // transformFullResToMap(); //_transformTobeMapped转换当前帧点云-for visualization
+   // _downsizedMapCreated = createDownsizedMap();//create submap,which is useless currently
 
    return true;
 }
@@ -604,6 +614,10 @@ void BasicLaserMapping::updateIMU(IMUState2 const& newState)
    _imuHistory.push(newState);
 }
 
+
+
+
+//odom coarse global pose
 void BasicLaserMapping::updateOdometry(double pitch, double yaw, double roll, double x, double y, double z)
 {
    _transformSum.rot_x = pitch;
@@ -614,15 +628,23 @@ void BasicLaserMapping::updateOdometry(double pitch, double yaw, double roll, do
    _transformSum.pos.y() = float(y);
    _transformSum.pos.z() = float(z);
 }
+// void BasicLaserMapping::updateOdometry(Twist const& twist)
+// {
+//    _transformSum = twist;
+// }
 
-void BasicLaserMapping::updateOdometry(Twist const& twist)
-{
-   _transformSum = twist;
-}
+
 
 nanoflann::KdTreeFLANN<pcl::PointXYZI> kdtreeCornerFromMap;
 nanoflann::KdTreeFLANN<pcl::PointXYZI> kdtreeSurfFromMap;
 
+
+/*
+* corner-map and surf-map ----> _laserCloudCornerStackDS _laserCloudSurfStackDS
+*1. 使用_transformTobeMapped变换feature point->对应map中寻找邻近点....
+*2. 优化结果赋值给 _transformTobeMapped
+*3. transformUpdate(); 用_transformTobeMapped 更新 _transformAftMapped
+*/
 void BasicLaserMapping::optimizeTransformTobeMapped()
 {
    if (_laserCloudCornerFromMap->size() <= 10 || _laserCloudSurfFromMap->size() <= 100)
@@ -665,7 +687,7 @@ void BasicLaserMapping::optimizeTransformTobeMapped()
       for (int i = 0; i < laserCloudCornerStackNum; i++)
       {
          pointOri = _laserCloudCornerStackDS->points[i];
-         pointAssociateToMap(pointOri, pointSel);
+         pointAssociateToMap(pointOri, pointSel);//使用_transformTobeMapped 做变换 lidar frame->global frame
          kdtreeCornerFromMap.nearestKSearch(pointSel, 5, pointSearchInd, pointSearchSqDis);
 
          if (pointSearchSqDis[4] < 1.0)

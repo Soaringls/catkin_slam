@@ -50,8 +50,9 @@
 #include <thread>
 #include <vector>
 
-#include "adu_common_odometry_msgs/adu_common_odometry.h"
-#include "adu_common_sensor_inspva_msgs/adu_common_sensor_inspva.h"
+#include "lio_sam/adu_common_odometry.h"
+#include "lio_sam/adu_common_sensor_inspva.h"
+// #include "adu_common_sensor_inspva_msgs/adu_common_sensor_inspva.h"
 
 using namespace std;
 
@@ -260,14 +261,14 @@ class ParamServer {
     Eigen::Vector3d acc(imu_in.linear_acceleration.x,
                         imu_in.linear_acceleration.y,
                         imu_in.linear_acceleration.z);
-    acc = extRot * acc;  // todo?? ls
+    acc = extRot * acc;  // convert imu's data from imu-frame to lidar-frame, just as lidar and lidar's extrinsic params
     imu_out.linear_acceleration.x = acc.x();
     imu_out.linear_acceleration.y = acc.y();
     imu_out.linear_acceleration.z = acc.z();
     // rotate gyroscope
     Eigen::Vector3d gyr(imu_in.angular_velocity.x, imu_in.angular_velocity.y,
                         imu_in.angular_velocity.z);
-    gyr = extRot * gyr;  // todo?? ls
+    gyr = extRot * gyr;  // just as "acc = extRot * acc;"
     imu_out.angular_velocity.x = gyr.x();
     imu_out.angular_velocity.y = gyr.y();
     imu_out.angular_velocity.z = gyr.z();
@@ -311,7 +312,7 @@ class ParamServer {
 
   template <typename T>
   void inspva2rosRPY(
-      const adu_common_odometry_msgs::adu_common_odometry &insmsg, T *rosRoll,
+      const lio_sam::adu_common_odometry &insmsg, T *rosRoll,
       T *rosPitch, T *rosYaw) {
     double roll, pitch, yaw;
     Eigen::Quaterniond q(insmsg.odom_pose.pose.orientation.w,
@@ -320,6 +321,7 @@ class ParamServer {
                          insmsg.odom_pose.pose.orientation.z);
     q.normalized();
     q = q * extQRPY;  // todo?? ls
+    // q =  extQRPY * q;  //test
     // tf::Quaternion orientation(q.w(), q.x(), q.y(), q.z());
     // tf::Matrix3x3(orientation).getRPY(roll, pitch, yaw);
     Eigen::Vector3d ypr = ToYPRAngles(q.matrix());
@@ -327,9 +329,9 @@ class ParamServer {
     //           << insmsg.odom_pose.pose.orientation.x;
     LOG(INFO) << "aaa1: yaw:" << ypr.x() << ", pitch:" << ypr.y()
               << ", roll:" << ypr.z();
-    *rosRoll = ypr.z();
-    *rosPitch = ypr.y();
-    *rosYaw = ypr.x();
+    *rosRoll = ypr.z();//r
+    *rosPitch = ypr.y();//p
+    *rosYaw = ypr.x();//y
     // *rosYaw = roll;
     // *rosPitch = pitch;
     // *rosRoll = yaw;

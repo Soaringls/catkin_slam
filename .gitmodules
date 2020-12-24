@@ -1,6 +1,6 @@
 [submodule "src/sc-series/SC-LeGO-LOAM"]
 	path = src/sc-series/SC-LeGO-LOAM
-	url = https://github.com/irapkaist/SC-LeGO-LOAM.git
+	url = https://github.com/Soaringls/SC-LeGO-LOAM.git
 [submodule "src/sc-series/SC-LIO-SAM"]
 	path = src/sc-series/SC-LIO-SAM
 	url = https://github.com/gisbi-kim/SC-LIO-SAM.git

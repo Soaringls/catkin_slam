@@ -73,10 +73,13 @@ class CloudHandle {
  public:
   CloudHandle() {
     sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(
-        "/sensor/velodyne16/back/PointCloud2", 10000, &CloudHandle::Callback2,
-        this);
+        "/velodyne_points", 10000, &CloudHandle::Callback2, this);
+    // pub path
     pub_odom_ = nh_.advertise<nav_msgs::Path>("/laser_odometry_path", 100);
+    pub_odom_coarse_ =
+        nh_.advertise<nav_msgs::Path>("/laser_odometry_coarsepath", 100);
     pub_mapping_ = nh_.advertise<nav_msgs::Path>("/laser_mapping_path", 100);
+    // pub cloud
     pub_cloud_ = nh_.advertise<sensor_msgs::PointCloud2>("/full_cloud", 1);
     pub_edge_ = nh_.advertise<sensor_msgs::PointCloud2>("/cloud_seg/edge", 1);
     pub_edge_lesssharp_ =
@@ -85,6 +88,7 @@ class CloudHandle {
         nh_.advertise<sensor_msgs::PointCloud2>("/cloud_seg/planar", 1);
     pub_planar_lessflat_ = nh_.advertise<sensor_msgs::PointCloud2>(
         "/cloud_seg/planar_lessflat", 1);
+    // pub map
     pub_map_ =
         nh_.advertise<sensor_msgs::PointCloud2>("/cloud_seg/globalMap", 1);
     pub_submap_ =
@@ -144,6 +148,8 @@ class CloudHandle {
     publishPath(pub_mapping_, mappingPath, mapping_pose);
 
     publishCloud(&pub_map_, lidar_mapping_.GenerateWholeMap(), ros::Time(time));
+    publishCloud(&pub_submap_, lidar_mapping_.GenerateSurroundMap(),
+                 ros::Time(time));
   }
   void Callback2(const sensor_msgs::PointCloud2ConstPtr& input) {
     static int cnt(0);
@@ -159,10 +165,17 @@ class CloudHandle {
     loam_odometry_.Process(cloud, time);
     LOG(INFO) << "final processTotal:" << t_frame.end() << " [ms]";
 
-    // publish odometry
-    auto odom_pose = loam_odometry_.GetPose();
-    static nav_msgs::Path odomPath;
-    publishPath(pub_odom_, odomPath, odom_pose);
+    // publish odometry coarse path
+    static nav_msgs::Path odomCoarsePath;
+    publishPath(pub_odom_coarse_, odomCoarsePath,
+                loam_odometry_.GetOdomCoarsePose());
+    // publish odometry refined path
+    // static nav_msgs::Path odomPath;
+    // publishPath(pub_odom_, odomPath, loam_odometry_.GetPose());
+    // publish refined path
+    static nav_msgs::Path mappingPath;
+    publishPath(pub_mapping_, mappingPath, loam_odometry_.GetRefinedPose());
+
     publishCloud(&pub_map_, loam_odometry_.GetMapCloud(), ros::Time(time));
     publishCloud(&pub_submap_, loam_odometry_.GetSurroundMap(),
                  ros::Time(time));
@@ -171,7 +184,7 @@ class CloudHandle {
  private:
   ros::NodeHandle nh_;
   ros::Subscriber sub_;
-  ros::Publisher pub_odom_, pub_mapping_;
+  ros::Publisher pub_odom_coarse_, pub_odom_, pub_mapping_;
   ros::Publisher pub_cloud_;
   ros::Publisher pub_edge_;
   ros::Publisher pub_edge_lesssharp_;

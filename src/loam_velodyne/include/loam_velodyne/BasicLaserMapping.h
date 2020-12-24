@@ -83,9 +83,9 @@ public:
    bool process(Time const& laserOdometryTime);
    void updateIMU(IMUState2 const& newState);
    void updateOdometry(double pitch, double yaw, double roll, double x, double y, double z);
-   void updateOdometry(Twist const& twist);
+   // void updateOdometry(Twist const& twist);
 
-   auto& laserCloud() { return *_laserCloudFullRes; }
+   auto& laserCloud() { return *_laserCloudFullRes; } //_transformTobeMapped转换当前帧点云-for visualization
    auto& laserCloudCornerLast() { return *_laserCloudCornerLast; }
    auto& laserCloudSurfLast() { return *_laserCloudSurfLast; }
 
@@ -172,7 +172,11 @@ private:
    std::vector<size_t> _laserCloudValidInd;
    std::vector<size_t> _laserCloudSurroundInd;
 
-   Twist _transformSum, _transformIncre, _transformTobeMapped, _transformBefMapped, _transformAftMapped;
+   Twist _transformSum;//odom coarse global pose
+   Twist _transformIncre;
+   Twist _transformBefMapped;//用 "_transformSum" update
+   Twist _transformTobeMapped;// scan2map优化的结果
+   Twist _transformAftMapped; // scan2map优化后使用"_transformTobeMapped" update
 
    CircularBuffer<IMUState2> _imuHistory;    ///< history of IMU states
 

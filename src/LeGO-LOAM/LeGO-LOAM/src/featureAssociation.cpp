@@ -74,7 +74,7 @@ class FeatureAssociation {
   bool newSegmentedCloudInfo;
   bool newOutlierCloud;
 
-  cloud_msgs::cloud_info segInfo;
+  lego_loam_cloud_msgs::cloud_info segInfo;
   std_msgs::Header cloudHeader;
 
   int systemInitCount;
@@ -189,7 +189,7 @@ class FeatureAssociation {
     subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>(
         "/segmented_cloud", 1, &FeatureAssociation::laserCloudHandler, this);
     // sub-分割信息
-    subLaserCloudInfo = nh.subscribe<cloud_msgs::cloud_info>(
+    subLaserCloudInfo = nh.subscribe<lego_loam_cloud_msgs::cloud_info>(
         "/segmented_cloud_info", 1, &FeatureAssociation::laserCloudInfoHandler,
         this);
     // sub-cloud 离群点 useless
@@ -547,7 +547,7 @@ class FeatureAssociation {
     newOutlierCloud = true;
   }
 
-  void laserCloudInfoHandler(const cloud_msgs::cloud_infoConstPtr &msgIn) {
+  void laserCloudInfoHandler(const lego_loam_cloud_msgs::cloud_infoConstPtr &msgIn) {
     timeNewSegmentedCloudInfo = msgIn->header.stamp.toSec();
     segInfo = *msgIn;
     newSegmentedCloudInfo = true;
@@ -1851,9 +1851,9 @@ class FeatureAssociation {
     transformSum[0] = rx;
     transformSum[1] = ry;
     transformSum[2] = rz;
-    transformSum[3] = tx;
-    transformSum[4] = ty;
-    transformSum[5] = tz;
+    transformSum[3] = tx;//x
+    transformSum[4] = ty;//y
+    transformSum[5] = tz;//z
   }
 
   void publishOdometry() {
@@ -1868,7 +1868,7 @@ class FeatureAssociation {
     laserOdometry.pose.pose.position.x = transformSum[3];
     laserOdometry.pose.pose.position.y = transformSum[4];
     laserOdometry.pose.pose.position.z = transformSum[5];
-    pubLaserOdometry.publish(laserOdometry);
+    pubLaserOdometry.publish(laserOdometry);//"laser_odom_to_init" global odom pose
 
     static nav_msgs::Path odom_path;
     publishPath(pub_odom_path, odom_path, laserOdometry);

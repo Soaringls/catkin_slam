@@ -31,7 +31,7 @@ class ImageProjection : public ParamServer {
   ros::Publisher pubLaserCloudInfo;
 
   ros::Subscriber subInspva;
-  std::deque<adu_common_odometry_msgs::adu_common_odometry> inspvaQueue;
+  std::deque<lio_sam::adu_common_odometry> inspvaQueue;
 
   ros::Subscriber subImu;
   std::deque<sensor_msgs::Imu> imuQueue;
@@ -74,7 +74,7 @@ class ImageProjection : public ParamServer {
  public:
   ImageProjection() : deskewFlag(0) {
     //-------->sub
-    subInspva = nh.subscribe<adu_common_odometry_msgs::adu_common_odometry>(
+    subInspva = nh.subscribe<lio_sam::adu_common_odometry>(
         inspvaTopic, 2000, &ImageProjection::InpvaHandler, this,
         ros::TransportHints().tcpNoDelay());
     subImu = nh.subscribe<sensor_msgs::Imu>(
@@ -138,7 +138,7 @@ class ImageProjection : public ParamServer {
   ~ImageProjection() {}
 
   void InpvaHandler(
-      const adu_common_odometry_msgs::adu_common_odometry::ConstPtr
+      const lio_sam::adu_common_odometry::ConstPtr
           &inspva_msg) {
     std::lock_guard<std::mutex> lock(insLock);
     inspvaQueue.push_back(*inspva_msg);
