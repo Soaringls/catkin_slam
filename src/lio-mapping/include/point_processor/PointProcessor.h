@@ -167,9 +167,9 @@ class PointProcessor {
   void PublishResults();
 
   // TODO: not necessary data?
-  vector<PointCloudPtr> laser_scans;    //每帧点云每个激光束转一圈的点为laser_scans中的一个元素
-  vector<PointCloudPtr> intensity_scans;//每帧点云每个激光束转一圈的点为intensity_scans中的一个元素
-  vector<IndexRange> scan_ranges;       //从第一个激光束第一个点到最后一个激光束最后一个点进行编号，分组数等于激光器数目，一组是一个元素
+  vector<PointCloudPtr> laser_scans;
+  vector<PointCloudPtr> intensity_scans;
+  vector<IndexRange> scan_ranges;
 
  protected:
 
@@ -186,7 +186,7 @@ class PointProcessor {
   PointCloudConstPtr cloud_ptr_;
   pcl::PointCloud<PointIR>::Ptr cloud_ir_ptr_;
 
-  PointCloud cloud_in_rings_;  //一帧点云 16个激光束的点集合
+  PointCloud cloud_in_rings_;
 
   PointCloud corner_points_sharp_;
   PointCloud corner_points_less_sharp_;

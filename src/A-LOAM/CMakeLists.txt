@@ -22,35 +22,44 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(PCL REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Ceres REQUIRED)
+find_package(Boost REQUIRED)
+find_package(yaml-cpp REQUIRED)
+
+link_directories(${Boost_LIBRARY_DIRS})
 
 include_directories(
   include
 	${catkin_INCLUDE_DIRS} 
 	${PCL_INCLUDE_DIRS}
   ${CERES_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS})
+  ${OpenCV_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
+  ${YAMLCPP_INCLUDE_DIR}
+)
 
+set(THIRD_LIBS 
+    yaml-cpp glog
+    ${PCL_LIBRARIES} 
+    ${OpenCV_LIBS}
+    ${CERES_LIBRARIES}
+    ${Boost_LIBRARIES}
+)
 catkin_package(
   CATKIN_DEPENDS geometry_msgs nav_msgs roscpp rospy std_msgs
   DEPENDS EIGEN3 PCL 
   INCLUDE_DIRS include
-)
+) 
 
-add_library(ceres_loam 
-            src/lib/cloud_segmentation.cc
-            src/lib/lidar_odometry.cc
-            src/lib/lidar_refination.cc
+add_library(ceres_loam2 
+            src/lib2/cloud_segmentation.cc
+            src/lib2/config.cc
+            src/lib2/lidar_odometry.cc
+            src/lib2/lidar_refination.cc
 )
-target_link_libraries(ceres_loam 
-       glog
-       ${PCL_LIBRARIES} 
-       ${OpenCV_LIBS}
-       ${CERES_LIBRARIES}
-)
-
-add_executable(aloam src/main.cc)
-target_link_libraries(aloam 
-       ${catkin_LIBRARIES} ceres_loam
+target_link_libraries(ceres_loam2  ${THIRD_LIBS})
+add_executable(testlib2 src/test_lib2.cc)
+target_link_libraries(testlib2
+       ${catkin_LIBRARIES} ceres_loam2
 )
 
 # add_executable(aimageProjection src/imageProjection.cpp)

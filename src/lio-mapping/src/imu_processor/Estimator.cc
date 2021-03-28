@@ -791,9 +791,7 @@ void Estimator::ProcessCompactData(const sensor_msgs::PointCloud2ConstPtr &compa
 //    DLOG(INFO) << "base incre in laser world: " << d_trans;
 //    DLOG(INFO) << "incre in laser world: " << transform_incre;
 //    DLOG(INFO) << "before opt: " << transform_tobe_mapped_ * transform_lb_ * d_trans * transform_lb_.inverse();
-//
 //    DLOG(INFO) << "curr * lb: " << trans_curr * transform_lb_.inverse();
-//
 //    DLOG(INFO) << "tobe: " << transform_tobe_mapped_ * transform_incre;
 
     if (estimator_config_.imu_factor) {
@@ -810,28 +808,7 @@ void Estimator::ProcessCompactData(const sensor_msgs::PointCloud2ConstPtr &compa
   if (stage_flag_ != INITED || !estimator_config_.imu_factor) {
     /// 2. process decoded data
     PointMapping::Process();
-  } else {
-//    for (int i = 0; i < laser_cloud_surf_last_->size(); ++i) {
-//      PointT &p = laser_cloud_surf_last_->at(i);
-//      p.intensity = p.intensity - int(p.intensity);
-//    }
-//
-//    for (int i = 0; i < laser_cloud_corner_last_->size(); ++i) {
-//      PointT &p = laser_cloud_corner_last_->at(i);
-//      p.intensity = p.intensity - int(p.intensity);
-//    }
-//
-//    laser_cloud_surf_stack_downsampled_->clear();
-//    down_size_filter_surf_.setInputCloud(laser_cloud_surf_last_);
-//    down_size_filter_surf_.filter(*laser_cloud_surf_stack_downsampled_);
-//    size_t laser_cloud_surf_stack_ds_size = laser_cloud_surf_stack_downsampled_->points.size();
-//
-//    // down sample feature stack clouds
-//    laser_cloud_corner_stack_downsampled_->clear();
-//    down_size_filter_corner_.setInputCloud(laser_cloud_corner_last_);
-//    down_size_filter_corner_.filter(*laser_cloud_corner_stack_downsampled_);
-//    size_t laser_cloud_corner_stack_ds_size = laser_cloud_corner_stack_downsampled_->points.size();
-  }
+  } 
 
   DLOG(INFO) << "laser_cloud_surf_last_[" << header.stamp.toSec() << "]: "
             << laser_cloud_surf_last_->size();

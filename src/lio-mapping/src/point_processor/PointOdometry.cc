@@ -111,7 +111,7 @@ void PointOdometry::SetupRos(ros::NodeHandle &nh) {
   enable_odom_service_ = nh.advertiseService("/enable_odom", &PointOdometry::EnableOdom, this);
 
   if (compact_data_) {
-    pub_compact_data_ = nh.advertise<sensor_msgs::PointCloud2>("/compact_data", 2);  //和imu
+    pub_compact_data_ = nh.advertise<sensor_msgs::PointCloud2>("/compact_data", 2);
   } else {
     // advertise laser odometry topics
     pub_laser_cloud_corner_last_ = nh.advertise<sensor_msgs::PointCloud2>("/laser_cloud_corner_last", 2);
