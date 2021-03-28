@@ -243,9 +243,9 @@ void PointProcessor::PointToRing(const PointCloudConstPtr &cloud_in,
       continue;
     }
 
-    float dis = sqrt(p.x * p.x + p.y * p.y);    //距离值
-    float ele_rad = atan2(p.z, dis);            //垂直角度
-    float azi_rad = 2 * M_PI - atan2(p.y, p.x); //水平方位角
+    float dis = sqrt(p.x * p.x + p.y * p.y);
+    float ele_rad = atan2(p.z, dis);
+    float azi_rad = 2 * M_PI - atan2(p.y, p.x);
 
     ///>mine
 #ifndef DEBUG_ORIGIN
@@ -253,7 +253,7 @@ void PointProcessor::PointToRing(const PointCloudConstPtr &cloud_in,
       azi_rad -= 2 * M_PI;
     }
 
-    int scan_id = ElevationToRing(ele_rad);  //16条激光束 从底到顶进行编码
+    int scan_id = ElevationToRing(ele_rad);
 
     if (scan_id >= num_rings_ || scan_id < 0) {
       // DLOG(INFO) << RadToDeg(ele_rad) << ", " << scan_id;
@@ -549,12 +549,12 @@ void PointProcessor::PrepareRing(const PointCloud &scan) {
     const PointT &p_curr = scan[i];
     const PointT &p_next = scan[i + 1];
 
-    float diff_next2 = CalcSquaredDiff(p_curr, p_next);//两点之间距离平方
+    float diff_next2 = CalcSquaredDiff(p_curr, p_next);
 
     // about 30 cm
-    if (diff_next2 > 0.1) {////两点之间距离超过30cm
-      float depth = CalcPointDistance(p_curr);     //激光点测距
-      float depth_next = CalcPointDistance(p_next);//激光点测距
+    if (diff_next2 > 0.1) {
+      float depth = CalcPointDistance(p_curr);
+      float depth_next = CalcPointDistance(p_next);
 
       if (depth > depth_next) {
         // to closer point
@@ -573,8 +573,8 @@ void PointProcessor::PrepareRing(const PointCloud &scan) {
       }
     }
 
-    float diff_prev2 = CalcSquaredDiff(p_curr, p_prev);//两点之间距离平方
-    float dis2 = CalcSquaredPointDistance(p_curr);     //激光点测距平方
+    float diff_prev2 = CalcSquaredDiff(p_curr, p_prev);
+    float dis2 = CalcSquaredPointDistance(p_curr);
 
     // for this point -- 1m -- 1.5cm
     if (diff_next2 > 0.0002 * dis2 && diff_prev2 > 0.0002 * dis2) {
@@ -595,9 +595,7 @@ void PointProcessor::PrepareSubregion(const PointCloud &scan, const size_t idx_s
 
   int num_point_neighbors = 2 * config_.num_curvature_regions;
 
-  for (size_t i = idx_start, in_region_idx = 0; 
-       i <= idx_end; 
-       ++i, ++in_region_idx) {
+  for (size_t i = idx_start, in_region_idx = 0; i <= idx_end; ++i, ++in_region_idx) {
     float diff_x = -num_point_neighbors * scan[i].x;
     float diff_y = -num_point_neighbors * scan[i].y;
     float diff_z = -num_point_neighbors * scan[i].z;
@@ -609,7 +607,7 @@ void PointProcessor::PrepareSubregion(const PointCloud &scan, const size_t idx_s
     }
 
     float curvature = diff_x * diff_x + diff_y * diff_y + diff_z * diff_z;
-    pair<float, size_t> curvature_idx_(curvature, i);//曲率，点索引
+    pair<float, size_t> curvature_idx_(curvature, i);
     curvature_idx_pairs_[in_region_idx] = curvature_idx_;
 //    _regionCurvature[regionIdx] = diffX * diffX + diffY * diffY + diffZ * diffZ;
 //    _regionSortIndices[regionIdx] = i;
@@ -706,7 +704,7 @@ void PointProcessor::ExtractFeaturePoints() {
 
           MaskPickedInRing(scan_ring, in_scan_idx);
         }
-      } //处理单个激光束的点
+      }
 
       // extract flat surface features
       int num_smallest_picked = 0;
@@ -724,7 +722,7 @@ void PointProcessor::ExtractFeaturePoints() {
 
           MaskPickedInRing(scan_ring, in_scan_idx);
         }
-      } //处理单个激光束的点
+      }
 
       // extract less flat surface features
       for (int k = 0; k < region_size; ++k) {
@@ -733,7 +731,7 @@ void PointProcessor::ExtractFeaturePoints() {
         }
       }
 
-    } /// j  //处理单个激光束的subregions的点
+    } /// j
 
     // down size less flat surface point cloud of current scan
     PointCloud surf_points_less_flat_downsampled;
@@ -752,7 +750,7 @@ void PointProcessor::ExtractFeaturePoints() {
 
     }
 
-  } /// i  16条激光束遍历完毕
+  } /// i
 
   size_t less_flat_cloud_size = surface_points_less_flat_.size();
 

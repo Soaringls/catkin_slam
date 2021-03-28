@@ -1,0 +1,5 @@
+<launch>
+ 
+    <node pkg="aloam_velodyne" type="testlib2" name="testlib2" output="screen"  launch-prefix="xterm -e gdb -ex run --args" />
+
+</launch>
