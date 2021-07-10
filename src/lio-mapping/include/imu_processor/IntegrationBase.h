@@ -127,27 +127,33 @@ class IntegrationBase {
   void MidPointIntegration(double dt,
                            const Vector3d &acc0, const Vector3d &gyr0,
                            const Vector3d &acc1, const Vector3d &gyr1,
-                           const Vector3d &delta_p, const Quaterniond &delta_q,
-                           const Vector3d &delta_v, const Vector3d &linearized_ba,
-                           const Vector3d &linearized_bg, Vector3d &result_delta_p,
-                           Quaterniond &result_delta_q, Vector3d &result_delta_v,
+                           const Vector3d &delta_p, const Quaterniond &delta_q,  const Vector3d &delta_v,
+                           const Vector3d &linearized_ba, const Vector3d &linearized_bg, 
+                           Vector3d &result_delta_p, Quaterniond &result_delta_q, Vector3d &result_delta_v,
                            Vector3d &result_linearized_ba, Vector3d &result_linearized_bg,
                            bool update_jacobian) {
     //ROS_DEBUG("midpoint integration");
 
     // NOTE: the un_acc here is different from the un_acc in the Estimator
-    Vector3d un_acc_0 = delta_q * (acc0 - linearized_ba);
     Vector3d un_gyr = 0.5 * (gyr0 + gyr1) - linearized_bg;
+    //update: q    t2时刻姿态R
     result_delta_q = delta_q * Quaterniond(1, un_gyr(0) * dt / 2, un_gyr(1) * dt / 2, un_gyr(2) * dt / 2);
+    
+    Vector3d un_acc_0 = delta_q * (acc0 - linearized_ba);//类似hanbin: Ra
     Vector3d un_acc_1 = result_delta_q * (acc1 - linearized_ba);
-    Vector3d un_acc = 0.5 * (un_acc_0 + un_acc_1);
-    result_delta_p = delta_p + delta_v * dt + 0.5 * un_acc * dt * dt;
+    Vector3d un_acc = 0.5 * (un_acc_0 + un_acc_1);//计算加速度 a = 1/2*(Ra1 + Ra2)
+    
+    //update: P
+    result_delta_p = delta_p + delta_v * dt + 0.5 * un_acc * dt * dt;//p=p0 + v*t + 1/2*a*t*t
+    //update: v
     result_delta_v = delta_v + un_acc * dt;
+    //update: ba
     result_linearized_ba = linearized_ba;
+    //update: bg
     result_linearized_bg = linearized_bg;
 
     if (update_jacobian) {
-      Vector3d w_x = 0.5 * (gyr0 + gyr1) - linearized_bg;
+      Vector3d w_x = 0.5 * (gyr0 + gyr1) - linearized_bg;//即un_gyr
       Vector3d a_0_x = acc0 - linearized_ba;
       Vector3d a_1_x = acc1 - linearized_ba;
       Matrix3d R_w_x, R_a_0_x, R_a_1_x;
@@ -163,7 +169,7 @@ class IntegrationBase {
           -a_1_x(1), a_1_x(0), 0;
 
       // NOTE: F = Fd = \Phi = I + dF*dt
-      MatrixXd F = MatrixXd::Zero(15, 15);
+      MatrixXd F = MatrixXd::Zero(15, 15);//状态转移矩阵
       F.block<3, 3>(0, 0) = Matrix3d::Identity();
       F.block<3, 3>(0, 3) = -0.25 * delta_q.toRotationMatrix() * R_a_0_x * dt * dt +
           -0.25 * result_delta_q.toRotationMatrix() * R_a_1_x * (Matrix3d::Identity() - R_w_x * dt) * dt * dt;
@@ -184,7 +190,7 @@ class IntegrationBase {
 
       // NOTE: V = Fd * G_c
       // FIXME: verify if it is right, the 0.25 part
-      MatrixXd V = MatrixXd::Zero(15, 18);
+      MatrixXd V = MatrixXd::Zero(15, 18);//噪声的观测矩阵
 //      V.block<3, 3>(0, 0) = 0.25 * delta_q.toRotationMatrix() * dt * dt;
       V.block<3, 3>(0, 0) = 0.5 * delta_q.toRotationMatrix() * dt * dt;
       V.block<3, 3>(0, 3) = 0.25 * -result_delta_q.toRotationMatrix() * R_a_1_x * dt * dt * 0.5 * dt;
@@ -285,14 +291,12 @@ class IntegrationBase {
     Vector3d result_linearized_ba;
     Vector3d result_linearized_bg;
 
-    MidPointIntegration(dt, acc0_, gyr0_, acc1, gyr1, delta_p_, delta_q_, delta_v_,
-                        linearized_ba_, linearized_bg_,
+    MidPointIntegration(dt, acc0_, gyr0_, acc1, gyr1,  //const
+                        delta_p_, delta_q_, delta_v_,  //const
+                        linearized_ba_, linearized_bg_,//const
                         result_delta_p, result_delta_q, result_delta_v,
                         result_linearized_ba, result_linearized_bg, true);
-//    EulerIntegration(dt, acc0_, gyr0_, acc1, gyr1, delta_p_, delta_q_, delta_v_,
-//                     linearized_ba_, linearized_bg_,
-//                     result_delta_p, result_delta_q, result_delta_v,
-//                     result_linearized_ba, result_linearized_bg, true);
+//    EulerIntegration(...);
 
     delta_p_ = result_delta_p;
     delta_q_ = result_delta_q;

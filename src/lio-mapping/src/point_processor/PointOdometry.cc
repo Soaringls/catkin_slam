@@ -119,6 +119,7 @@ void PointOdometry::SetupRos(ros::NodeHandle &nh) {
     pub_full_cloud_ = nh.advertise<sensor_msgs::PointCloud2>("/full_odom_cloud", 2);
   }
 
+  
   pub_laser_odometry_ = nh.advertise<nav_msgs::Odometry>("/laser_odom_to_init", 5);
 
   /// for test

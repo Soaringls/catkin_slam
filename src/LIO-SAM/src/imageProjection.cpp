@@ -137,9 +137,7 @@ class ImageProjection : public ParamServer {
 
   ~ImageProjection() {}
 
-  void InpvaHandler(
-      const lio_sam::adu_common_odometry::ConstPtr
-          &inspva_msg) {
+  void InpvaHandler(const lio_sam::adu_common_odometry::ConstPtr &inspva_msg) {
     std::lock_guard<std::mutex> lock(insLock);
     inspvaQueue.push_back(*inspva_msg);
 

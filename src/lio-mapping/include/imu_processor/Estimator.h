@@ -183,7 +183,7 @@ class Estimator : public MeasurementManager, public PointMapping {
   bool first_imu_ = false;
   double initial_time_ = -1;
 
-  size_t cir_buf_count_ = 0;
+  size_t cir_buf_count_ = 0;//随雷达数据增长
   size_t laser_odom_recv_count_ = 0;
 
   Vector3d acc_last_, gyr_last_;

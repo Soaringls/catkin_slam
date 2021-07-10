@@ -111,7 +111,7 @@ void MapBuilder::SetupRos(ros::NodeHandle &nh) {
 
   pub_laser_cloud_surround_ = nh.advertise<sensor_msgs::PointCloud2>("laser_cloud_surround", 2);
   pub_full_cloud_ = nh.advertise<sensor_msgs::PointCloud2>("cloud_registered", 2);
-  pub_odom_aft_mapped_ = nh.advertise<nav_msgs::Odometry>("aft_mapped_to_init", 5);
+  pub_odom_aft_mapped_ = nh.advertise<nav_msgs::Odometry>("aft_mapped_to_init", 5); // refined pose
 
   /// for test
 //  pub_diff_odometry_ = nh.advertise<nav_msgs::Odometry>("/laser_odom_to_last", 5);
