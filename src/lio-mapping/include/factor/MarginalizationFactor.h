@@ -56,14 +56,15 @@ struct ResidualBlockInfo {
                     std::vector<int> _drop_set)
       : cost_function(_cost_function),
         loss_function(_loss_function),
-        parameter_blocks(_parameter_blocks),
+        parameter_blocks(_parameter_blocks),  //包含各优化变量
         drop_set(_drop_set) {}
 
   void Evaluate();
 
   ceres::CostFunction *cost_function;
   ceres::LossFunction *loss_function;
-  std::vector<double *> parameter_blocks;
+  std::vector<double *>
+      parameter_blocks;  //存储每个优化变量的地址,如para_pose_[0]
   std::vector<int> drop_set;
 
   double **raw_jacobians;
@@ -88,15 +89,19 @@ class MarginalizationInfo {
   ~MarginalizationInfo();
   int LocalSize(int size) const;
   int GlobalSize(int size) const;
+  //添加参差块相关信息（优化变量，待marg的变量）
   void AddResidualBlockInfo(ResidualBlockInfo *residual_block_info);
+  //计算每个残差对应的雅克比，并更新parameter_block_data
   void PreMarginalize();
   void Marginalize();
   std::vector<double *> GetParameterBlocks(
       std::unordered_map<long, double *> &addr_shift);
 
-  std::vector<ResidualBlockInfo *> factors;
-  int m, n;
-  // key: 内存地址
+  // variables
+  std::vector<ResidualBlockInfo *> factors;  //所有观测项
+  int m, n;  // m为要边缘化的变量个数，n为要保留下来的变量个数
+
+  // key: 优化变量内存地址  localSize  在矩阵中的id  数据
   std::unordered_map<long, int> parameter_block_size;  // global size
   int sum_block_size;
   std::unordered_map<long, int> parameter_block_idx;  // local size

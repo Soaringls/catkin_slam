@@ -559,7 +559,7 @@ void Estimator::ProcessLaserOdom(const Transform &transform_in,
 
           DLOG(INFO) << "initialization time: " << tic_toc_.Toc() << " ms";
 
-          if (init_result) {  //否則 只進行 SlideWindow();
+          if (init_result) {  //否則 只進行 SlideWindow()
             stage_flag_ = INITED;
             SetInitFlag(true);
 
@@ -1837,6 +1837,7 @@ void Estimator::SolveOptimization() {
   ceres::internal::ResidualBlock *res_id_marg = NULL;
 
   // region Marginalization residual
+  //////////// Marginalization因子
   if (estimator_config_.marginalization_factor) {  // 1
     if (last_marginalization_info) {
       // construct new marginlization_factor
@@ -2045,7 +2046,7 @@ void Estimator::SolveOptimization() {
   // FIXME: Is marginalization needed in this framework? Yes, needed for
   // extrinsic parameters.
 
-  DoubleToVector();
+  DoubleToVector();  // optimization over !!!!!!!!!!!!!!!!!!!!!!!!
 
   //  P_last = Ps_.last();
   //  if ((P_last - P_last0).norm() < 0.1) {
@@ -2058,6 +2059,7 @@ void Estimator::SolveOptimization() {
   //    }
   //  }
 
+  // step 0 ------ AddResidualBlockInfo
   // region Constraint Marginalization| marginalization_factor=1
   if (estimator_config_.marginalization_factor && !turn_off) {
     TicToc t_whole_marginalization;
@@ -2101,7 +2103,7 @@ void Estimator::SolveOptimization() {
       }
     }
 
-    if (estimator_config_.point_distance_factor) {
+    if (estimator_config_.point_distance_factor) {  // 1
       for (int i = 1; i < estimator_config_.opt_window_size + 1; ++i) {
         int opt_i = int(estimator_config_.window_size -
                         estimator_config_.opt_window_size + i);
@@ -2110,8 +2112,6 @@ void Estimator::SolveOptimization() {
         LOG_ASSERT(opt_i == feature_per_frame.id);
 
         vector<unique_ptr<Feature>> &features = feature_per_frame.features;
-
-        //        DLOG(INFO) << "features.size(): " << features.size();
 
         for (int j = 0; j < features.size(); ++j) {
           PointPlaneFeature feature_j;
@@ -2135,11 +2135,13 @@ void Estimator::SolveOptimization() {
     }
 
     TicToc t_pre_margin;
+    // step 1 ------ PreMarginalize
     marginalization_info->PreMarginalize();
     ROS_DEBUG("pre marginalization %f ms", t_pre_margin.Toc());
     ROS_DEBUG_STREAM("pre marginalization: " << t_pre_margin.Toc() << " ms");
 
     TicToc t_margin;
+    // step 2 ------ Marginalize
     marginalization_info->Marginalize();
     ROS_DEBUG("marginalization %f ms", t_margin.Toc());
     ROS_DEBUG_STREAM("marginalization: " << t_margin.Toc() << " ms");

@@ -284,7 +284,7 @@ ProblemImpl::~ProblemImpl() {
   }
 }
 
-ResidualBlock* ProblemImpl::AddResidualBlock(
+ResidualBlock* ProblemImpl::AddResidualBlock(// main AddResidualBlock
     CostFunction* cost_function,
     LossFunction* loss_function,
     const vector<double*>& parameter_blocks) {

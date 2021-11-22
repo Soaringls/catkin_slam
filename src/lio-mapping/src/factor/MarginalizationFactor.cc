@@ -77,7 +77,7 @@ void MarginalizationInfo::AddResidualBlockInfo(
 
   std::vector<double *> &parameter_blocks =
       residual_block_info->parameter_blocks;
-  std::vector<int> parameter_block_sizes =
+  std::vector<int> parameter_block_sizes =  //存储每个优化变量的维数
       residual_block_info->cost_function->parameter_block_sizes();
 
   for (int i = 0;
@@ -85,6 +85,7 @@ void MarginalizationInfo::AddResidualBlockInfo(
        i++) {
     double *addr = parameter_blocks[i];
     int size = parameter_block_sizes[i];
+    //存储每个优化变量的维数
     parameter_block_size[reinterpret_cast<long>(addr)] = size;
   }
 
@@ -97,16 +98,17 @@ void MarginalizationInfo::AddResidualBlockInfo(
 
 void MarginalizationInfo::PreMarginalize() {
   for (auto it : factors) {
-    it->Evaluate();
+    it->Evaluate();  //计算所有状态变量构成的残差和雅克比矩阵
 
     std::vector<int> block_sizes = it->cost_function->parameter_block_sizes();
     for (int i = 0; i < static_cast<int>(block_sizes.size()); i++) {
-      long addr = reinterpret_cast<long>(it->parameter_blocks[i]);
-      int size = block_sizes[i];
+      long addr =  //优化变量的地址,ResidualBlockInfo构造中-2项的元素
+          reinterpret_cast<long>(it->parameter_blocks[i]);
+      int size = block_sizes[i];  //每个优化变量的维数,如 pos-3  q-4 v-3 ba-3
       if (parameter_block_data.find(addr) == parameter_block_data.end()) {
         double *data = new double[size];
         memcpy(data, it->parameter_blocks[i], sizeof(double) * size);
-        parameter_block_data[addr] = data;
+        parameter_block_data[addr] = data;  //存储每个优化变量的数据
       }
     }
   }
@@ -155,21 +157,24 @@ void *ThreadsConstructA(void *threadsstruct) {
 
 void MarginalizationInfo::Marginalize() {
   int pos = 0;
+  //遍历待marg的优化变量的内存地址
   for (auto &it : parameter_block_idx) {
     it.second = pos;
     pos += LocalSize(parameter_block_size[it.first]);
   }
 
-  m = pos;
+  m = pos;  //需要marg掉的变量个数
 
   for (const auto &it : parameter_block_size) {
     if (parameter_block_idx.find(it.first) == parameter_block_idx.end()) {
+      //如果这个变量不是是待marg的优化变量         {
       parameter_block_idx[it.first] = pos;
       pos += LocalSize(it.second);
     }
   }
 
-  n = pos - m;
+  n = pos - m;  //要保留下来的变量个数
+  //通过上面的操作就会将所有的优化变量进行一个伪排序，待marg的优化变量的idx为0，其他的和起所在的位置相关
 
   Eigen::MatrixXd A(pos, pos);
   Eigen::VectorXd b(pos);
@@ -180,7 +185,7 @@ void MarginalizationInfo::Marginalize() {
   pthread_t tids[NUM_THREADS];
   ThreadsStruct threadsstruct[NUM_THREADS];
   int i = 0;
-  for (auto it : factors) {
+  for (auto it : factors) {  //将各个残差块的雅克比矩阵分配到各个线程中去
     threadsstruct[i].sub_factors.push_back(it);
     i++;
     i = i % NUM_THREADS;
@@ -191,7 +196,7 @@ void MarginalizationInfo::Marginalize() {
     threadsstruct[i].b = Eigen::VectorXd::Zero(pos);
     threadsstruct[i].parameter_block_size = parameter_block_size;
     threadsstruct[i].parameter_block_idx = parameter_block_idx;
-    int ret = pthread_create(&tids[i], NULL, ThreadsConstructA,
+    int ret = pthread_create(&tids[i], NULL, ThreadsConstructA,  //分别构造矩阵
                              (void *)&(threadsstruct[i]));
     if (ret != 0) {
       ROS_DEBUG("pthread_create error");
@@ -205,7 +210,7 @@ void MarginalizationInfo::Marginalize() {
   }
 
   // TODO
-  Eigen::MatrixXd Amm =
+  Eigen::MatrixXd Amm =  //需要marg掉的
       0.5 * (A.block(0, 0, m, m) + A.block(0, 0, m, m).transpose());
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> saes(Amm);
 
@@ -215,15 +220,17 @@ void MarginalizationInfo::Marginalize() {
                           .select(saes.eigenvalues().array().inverse(), 0))
           .asDiagonal() *
       saes.eigenvectors().transpose();
-
-  Eigen::VectorXd bmm = b.segment(0, m);
-  Eigen::MatrixXd Amr = A.block(0, m, m, n);
-  Eigen::MatrixXd Arm = A.block(m, 0, n, m);
-  Eigen::MatrixXd Arr = A.block(m, m, n, n);
-  Eigen::VectorXd brr = b.segment(m, n);
+  //舒尔补
+  Eigen::VectorXd bmm = b.segment(0, m);      //需要marg掉的
+  Eigen::MatrixXd Amr = A.block(0, m, m, n);  // rightTop
+  Eigen::MatrixXd Arm = A.block(m, 0, n, m);  // leftBottom
+  Eigen::MatrixXd Arr = A.block(m, m, n, n);  //要保留的
+  Eigen::VectorXd brr = b.segment(m, n);      //要保留的
+  //这里的A和b应该都是marg过的A和b,大小是发生了变化的
   A = Arr - Arm * Amm_inv * Amr;
   b = brr - Arm * Amm_inv * bmm;
 
+  //更新先验残差项
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> saes2(A);
   Eigen::VectorXd S =
       Eigen::VectorXd((saes2.eigenvalues().array() > eps)
