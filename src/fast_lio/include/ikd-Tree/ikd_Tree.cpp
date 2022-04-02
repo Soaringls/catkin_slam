@@ -560,7 +560,7 @@ int KD_TREE<PointType>::Delete_Point_Boxes(vector<BoxPointType> &BoxPoints) {
   int tmp_counter = 0;
   for (int i = 0; i < BoxPoints.size(); i++) {
     if (Rebuild_Ptr == nullptr || *Rebuild_Ptr != Root_Node) {
-      tmp_counter += Delete_by_range(&Root_Node, BoxPoints[i], true, false);
+      tmp_counter += Delete_by_range(&Root_Node, BoxPoints[i], true/*allow_rebuild*/, false/*is_downsample*/);
     } else {
       Operation_Logger_Type operation;
       operation.boxpoint = BoxPoints[i];

@@ -98,59 +98,44 @@ struct SO2 : public Eigen::Rotation2D<_scalar> {
 	typedef _scalar scalar;
 	typedef Eigen::Rotation2D<scalar> base;
 	typedef vect<DIM, scalar, Options> vect_type;
-	
+	////////////////////////////////////////////////////
+	////////////////////////////////////////////////////
+	////////constructor
+	////////////////////////////////////////////////////
+	////////////////////////////////////////////////////
 	//! Construct from angle
-	SO2(const scalar& angle = 0) : base(angle) {	}
-	
+	SO2(const scalar& angle = 0) : base(angle) {	}	
 	//! Construct from Eigen::Rotation2D
-	SO2(const base& src) : base(src) {}
-	
+	SO2(const base& src) : base(src) {}	
 	/**
 	 * Construct from 2D vector.
 	 * Resulting orientation will rotate the first unit vector to point to vec.
 	 */
 	SO2(const vect_type &vec) : base(atan2(vec[1], vec[0])) {};
 	
-	
+	////////////////////////////////////////////////////
+	////////overwrite operator 
+	////////////////////////////////////////////////////
+	////operator%: result=tf=t2/t1
 	//! Calculate @c this->inverse() * @c r
 	SO2 operator%(const base &r) const {
 		return base::inverse() * r;
 	}
-
+    ////operator%: result=tf=t2/t1
 	//! Calculate @c this->inverse() * @c r
 	template<class Derived>
 	vect_type operator%(const Eigen::MatrixBase<Derived> &vec) const {
 		return base::inverse() * vec;
 	}
-	
+	//operator/: result=x1=x2/tf, and x2=x1*tf
 	//! Calculate @c *this * @c r.inverse()
 	SO2 operator/(const SO2 &r) const {
 		return *this * r.inverse();
 	}
-	
-	//! Gets the angle as scalar.
-	operator scalar() const {
-		return base::angle(); 
-	}
-	void S2_hat(Eigen::Matrix<scalar, 3, 3> &res)
-	{
-		res = Eigen::Matrix<scalar, 3, 3>::Zero();
-	}
-	//! @name Manifold requirements
-	void S2_Nx_yy(Eigen::Matrix<scalar, 2, 3> &res)
-	{
-		std::cerr << "wrong idx for S2" << std::endl;
-		std::exit(100);	
-    	res = Eigen::Matrix<scalar, 2, 3>::Zero();
-	}
 
-	void S2_Mx(Eigen::Matrix<scalar, 3, 2> &res, MTK::vectview<const scalar, 2> delta)
-	{
-		std::cerr << "wrong idx for S2" << std::endl;
-		std::exit(100);	
-    	res = Eigen::Matrix<scalar, 3, 2>::Zero();
-	}
-
+	////////////////////////////////////////////////////
+	////////Manifold requirements
+	////////////////////////////////////////////////////
 	void oplus(MTK::vectview<const scalar, DOF> vec, scalar scale = 1) {
 		base::angle() += scale * vec[0];
 	}
@@ -162,13 +147,43 @@ struct SO2 : public Eigen::Rotation2D<_scalar> {
 		res[0] = MTK::normalize(base::angle() - other.angle(), scalar(MTK::pi));
 	}
 	
+	//! Gets the angle as scalar.
+	operator scalar() const {
+		return base::angle(); 
+	}
+
+	////////////////////////////////////////////////////
+	////////zero matrix
+	////////////////////////////////////////////////////
+	//zero 3x3
+	void S2_hat(Eigen::Matrix<scalar, 3, 3> &res)
+	{
+		res = Eigen::Matrix<scalar, 3, 3>::Zero();
+	}
+	//zero 2x3
+	//! @name Manifold requirements
+	void S2_Nx_yy(Eigen::Matrix<scalar, 2, 3> &res)
+	{
+		std::cerr << "wrong idx for S2" << std::endl;
+		std::exit(100);	
+    	res = Eigen::Matrix<scalar, 2, 3>::Zero();
+	}
+    //zero 3x2
+	void S2_Mx(Eigen::Matrix<scalar, 3, 2> &res, MTK::vectview<const scalar, 2> delta)
+	{
+		std::cerr << "wrong idx for S2" << std::endl;
+		std::exit(100);	
+    	res = Eigen::Matrix<scalar, 3, 2>::Zero();
+	}
+    
+	
 	friend std::istream& operator>>(std::istream &is, SO2<scalar>& ang){
 		return is >> ang.angle();
 	}
 
 };
 
-
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Three-dimensional orientations represented as Quaternion.
  * It is assumed that the internal Quaternion always stays normalized,
@@ -182,24 +197,12 @@ struct SO3 : public Eigen::Quaternion<_scalar, Options> {
 	typedef Eigen::Quaternion<scalar> Quaternion;
 	typedef vect<DIM, scalar, Options> vect_type;
 	
-	//! Calculate @c this->inverse() * @c r
-	template<class OtherDerived> EIGEN_STRONG_INLINE 
-	Quaternion operator%(const Eigen::QuaternionBase<OtherDerived> &r) const {
-		return base::conjugate() * r;
-	}
 	
-	//! Calculate @c this->inverse() * @c r
-	template<class Derived>
-	vect_type operator%(const Eigen::MatrixBase<Derived> &vec) const {
-		return base::conjugate() * vec;
-	}
-	
-	//! Calculate @c this * @c r.conjugate()
-	template<class OtherDerived> EIGEN_STRONG_INLINE 
-	Quaternion operator/(const Eigen::QuaternionBase<OtherDerived> &r) const {
-		return *this * r.conjugate();
-	}
-	
+	////////////////////////////////////////////////////
+	////////////////////////////////////////////////////
+	////////constructor
+	////////////////////////////////////////////////////
+	////////////////////////////////////////////////////
 	/**
 	 * Construct from real part and three imaginary parts.
 	 * Quaternion is normalized after construction.
@@ -207,61 +210,45 @@ struct SO3 : public Eigen::Quaternion<_scalar, Options> {
 	SO3(const scalar& w, const scalar& x, const scalar& y, const scalar& z) : base(w, x, y, z) {
 		base::normalize();
 	}
-	
 	/**
 	 * Construct from Eigen::Quaternion.
 	 * @note Non-normalized input may result result in spurious behavior.
 	 */
 	SO3(const base& src = base::Identity()) : base(src) {}
-	
 	/**
 	 * Construct from rotation matrix.
 	 * @note Invalid rotation matrices may lead to spurious behavior.
 	 */
 	template<class Derived>
 	SO3(const Eigen::MatrixBase<Derived>& matrix) : base(matrix) {}
-	
 	/**
 	 * Construct from arbitrary rotation type.
 	 * @note Invalid rotation matrices may lead to spurious behavior.
 	 */
 	template<class Derived>
 	SO3(const Eigen::RotationBase<Derived, 3>& rotation) : base(rotation.derived()) {}
-	
-	//! @name Manifold requirements
-	
-	void boxplus(MTK::vectview<const scalar, DOF> vec, scalar scale=1) {
-		SO3 delta = exp(vec, scale);
-		*this = *this * delta;
-	}
-	void boxminus(MTK::vectview<scalar, DOF> res, const SO3<scalar>& other) const {
-		res = SO3::log(other.conjugate() * *this);
-	}
-	//}
 
-	void oplus(MTK::vectview<const scalar, DOF> vec, scalar scale=1) {
-		SO3 delta = exp(vec, scale);
-		*this = *this * delta;
+	////////////////////////////////////////////////////
+	////////overwrite operator 
+	////////////////////////////////////////////////////
+	//operator%: result=tf=t2/t1
+	//! Calculate @c this->inverse() * @c r
+	template<class OtherDerived> EIGEN_STRONG_INLINE 
+	Quaternion operator%(const Eigen::QuaternionBase<OtherDerived> &r) const {
+		return base::conjugate() * r;
 	}
-
-	void S2_hat(Eigen::Matrix<scalar, 3, 3> &res)
-	{
-		res = Eigen::Matrix<scalar, 3, 3>::Zero();
-	}
-	void S2_Nx_yy(Eigen::Matrix<scalar, 2, 3> &res)
-	{
-		std::cerr << "wrong idx for S2" << std::endl;
-		std::exit(100);	
-    	res = Eigen::Matrix<scalar, 2, 3>::Zero();
+	//! Calculate @c this->inverse() * @c r
+	template<class Derived>
+	vect_type operator%(const Eigen::MatrixBase<Derived> &vec) const {
+		return base::conjugate() * vec;
 	}
 
-	void S2_Mx(Eigen::Matrix<scalar, 3, 2> &res, MTK::vectview<const scalar, 2> delta)
-	{
-		std::cerr << "wrong idx for S2" << std::endl;
-		std::exit(100);	
-    	res = Eigen::Matrix<scalar, 3, 2>::Zero();
+	//operator/: result=x1=x2/tf, and x2=x1*tf
+	//! Calculate @c this * @c r.conjugate()  x2=x1*tf -->  x1=x2/tf, that is tf=t2/t1
+	template<class OtherDerived> EIGEN_STRONG_INLINE 
+	Quaternion operator/(const Eigen::QuaternionBase<OtherDerived> &r) const {
+		return *this * r.conjugate();
 	}
-
 	friend std::ostream& operator<<(std::ostream &os, const SO3<scalar, Options>& q){
 		return os << q.coeffs().transpose() << " ";
 	}
@@ -272,10 +259,55 @@ struct SO3 : public Eigen::Quaternion<_scalar, Options> {
 		q.coeffs() = coeffs.normalized();
 		return is;
 	}
+
+    ////////////////////////////////////////////////////
+	////////Manifold requirements
+	////////////////////////////////////////////////////
+	//! @name Manifold requirements
+	void boxplus(MTK::vectview<const scalar, DOF> vec, scalar scale=1) {
+		SO3 delta = exp(vec, scale);//R=EXP(vec)
+		*this = *this * delta;
+	}
+	void oplus/*same as "boxplus"*/(MTK::vectview<const scalar, DOF> vec, scalar scale=1) {
+		SO3 delta = exp(vec, scale);
+		*this = *this * delta;
+	}
+
+	
+	void boxminus(MTK::vectview<scalar, DOF> res, const SO3<scalar>& other) const {
+		//res = this(t2) - other(t1)
+		res = SO3::log(other.conjugate() * *this);//vec=log(R)
+	} 
+	
+
+	////////////////////////////////////////////////////
+	////////zero matrix
+	////////////////////////////////////////////////////
+    //zero 3x3
+	void S2_hat(Eigen::Matrix<scalar, 3, 3> &res)
+	{
+		res = Eigen::Matrix<scalar, 3, 3>::Zero();
+	}
+	//zero 2x3
+	void S2_Nx_yy(Eigen::Matrix<scalar, 2, 3> &res)
+	{
+		std::cerr << "wrong idx for S2" << std::endl;
+		std::exit(100);	
+    	res = Eigen::Matrix<scalar, 2, 3>::Zero();
+	}
+    //zero 3x2
+	void S2_Mx(Eigen::Matrix<scalar, 3, 2> &res, MTK::vectview<const scalar, 2> delta)
+	{
+		std::cerr << "wrong idx for S2" << std::endl;
+		std::exit(100);	
+    	res = Eigen::Matrix<scalar, 3, 2>::Zero();
+	}
+
+	
 	
 	//! @name Helper functions
 	//{
-	/**
+	/**R=EXP(vec) 即罗德里格斯公式  旋转向量(李代数)->旋转矩阵(李群)
 	 * Calculate the exponential map. In matrix terms this would correspond 
 	 * to the Rodrigues formula.
 	 */
@@ -286,7 +318,7 @@ struct SO3 : public Eigen::Quaternion<_scalar, Options> {
 		res.w() = MTK::exp<scalar, 3>(res.vec(), dvec, scalar(scale/2));
 		return res;
 	}
-	/**
+	/**vec=log(R)， the inverse of R=EXP(vec)
 	 * Calculate the inverse of @c exp.
 	 * Only guarantees that <code>exp(log(x)) == x </code>
 	 */
@@ -295,7 +327,7 @@ struct SO3 : public Eigen::Quaternion<_scalar, Options> {
 		MTK::log<scalar, 3>(res, orient.w(), orient.vec(), scalar(2), true);
 		return res;
 	}
-};
+};//end of struct SO3
 
 namespace internal {
 template<class Scalar, int Options>

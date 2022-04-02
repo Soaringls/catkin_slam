@@ -173,11 +173,11 @@ auto set_pose6d(const double t, const Matrix<T, 3, 1> &a, const Matrix<T, 3, 1> 
     rot_kp.offset_time = t;
     for (int i = 0; i < 3; i++)
     {
-        rot_kp.acc[i] = a(i);
-        rot_kp.gyr[i] = g(i);
-        rot_kp.vel[i] = v(i);
-        rot_kp.pos[i] = p(i);
-        for (int j = 0; j < 3; j++)  rot_kp.rot[i*3+j] = R(i,j);
+        rot_kp.acc[i] = a(i);//linear_acc
+        rot_kp.gyr[i] = g(i);//angle_vel
+        rot_kp.vel[i] = v(i);//velocity
+        rot_kp.pos[i] = p(i);//pos
+        for (int j = 0; j < 3; j++)  rot_kp.rot[i*3+j] = R(i,j);//altitude
     }
     return move(rot_kp);
 }

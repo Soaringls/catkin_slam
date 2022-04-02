@@ -82,7 +82,7 @@ namespace internal {
 
 	template<class scalar, int dim>
 	struct VectviewBase {
-		typedef Eigen::Matrix<scalar, dim, 1> matrix_type;
+		typedef Eigen::Matrix<scalar, dim, 1> matrix_type;// vector, size = m.size
 		typedef typename matrix_type::MapType Type;
 		typedef typename matrix_type::ConstMapType ConstType;
 	};

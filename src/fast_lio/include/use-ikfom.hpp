@@ -51,9 +51,9 @@ Eigen::Matrix<double, 24, 1> get_f(state_ikfom &s, const input_ikfom &in)
 	in.gyro.boxminus(omega, s.bg);
 	vect3 a_inertial = s.rot * (in.acc-s.ba); 
 	for(int i = 0; i < 3; i++ ){
-		res(i) = s.vel[i];
-		res(i + 3) =  omega[i]; 
-		res(i + 12) = a_inertial[i] + s.grav[i]; 
+		res(i) = s.vel[i];      //(0 1 2)/24 速度
+		res(i + 3) =  omega[i]; //(3 4 5)/24 角速度omega-w
+		res(i + 12) = a_inertial[i] + s.grav[i]; //(12 13 14)/24 *加速度a=R*(linear_acc-ba)- 9.8 即enu系下加速度*/,
 	}
 	return res;
 }
@@ -63,14 +63,14 @@ Eigen::Matrix<double, 24, 23> df_dx(state_ikfom &s, const input_ikfom &in)
 	Eigen::Matrix<double, 24, 23> cov = Eigen::Matrix<double, 24, 23>::Zero();
 	cov.template block<3, 3>(0, 12) = Eigen::Matrix3d::Identity();
 	vect3 acc_;
-	in.acc.boxminus(acc_, s.ba);
+	in.acc.boxminus(acc_, s.ba);   //corrected acc 
 	vect3 omega;
-	in.gyro.boxminus(omega, s.bg);
+	in.gyro.boxminus(omega, s.bg); //corrected w
 	cov.template block<3, 3>(12, 3) = -s.rot.toRotationMatrix()*MTK::hat(acc_);
 	cov.template block<3, 3>(12, 18) = -s.rot.toRotationMatrix();
 	Eigen::Matrix<state_ikfom::scalar, 2, 1> vec = Eigen::Matrix<state_ikfom::scalar, 2, 1>::Zero();
 	Eigen::Matrix<state_ikfom::scalar, 3, 2> grav_matrix;
-	s.S2_Mx(grav_matrix, vec, 21);
+	s.S2_Mx(grav_matrix, vec, 21);//21 22 23为状态量s(state_ikform 3x8->24位)的重力状态量
 	cov.template block<3, 2>(12, 21) =  grav_matrix; 
 	cov.template block<3, 3>(3, 15) = -Eigen::Matrix3d::Identity(); 
 	return cov;
