@@ -41,6 +41,7 @@ void Preprocess::set(bool feat_en, int lid_type, double bld, int pfilt_num)
   point_filter_num = pfilt_num;
 }
 
+//livox:livox_ros_driver::CustomMsg
 void Preprocess::process(const livox_ros_driver::CustomMsg::ConstPtr &msg, PointCloudXYZI::Ptr &pcl_out)
 {  
   avia_handler(msg);
@@ -235,8 +236,7 @@ void Preprocess::oust64_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
     for (int i = 0; i < pl_orig.points.size(); i++)
     {
       if (i % point_filter_num != 0) continue;
-
-      double range = pl_orig.points[i].x * pl_orig.points[i].x + pl_orig.points[i].y * pl_orig.points[i].y + pl_orig.points[i].z * pl_orig.points[i].z;
+      double range = std::hypot(pl_orig.points[i].x, pl_orig.points[i].y, pl_orig.points[i].z);
       
       if (range < (blind * blind)) continue;
       
@@ -249,7 +249,8 @@ void Preprocess::oust64_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
       added_pt.normal_x = 0;
       added_pt.normal_y = 0;
       added_pt.normal_z = 0;
-      added_pt.curvature = pl_orig.points[i].t / 1e6; // curvature unit: ms
+      //s>ms>us>ns    us=ns/1e3  ms=ns/1e6
+      added_pt.curvature = pl_orig.points[i].t/*unit=ns*/ / 1e6; // curvature unit: ms
 
       pl_surf.points.push_back(added_pt);
     }

@@ -1,0 +1,107 @@
+%YAML:1.0
+
+
+#Scale
+Scale: 100
+
+#image size
+image_width: 1241
+image_height: 376
+
+#feature traker paprameters
+max_cnt: 200            # max feature number in feature tracking
+min_dist: 30            # min distance between two features 
+
+#camera P R
+P_rect_00: !!opencv-matrix
+   rows: 3
+   cols: 4
+   dt: d
+   data: [7.188560e+02, 0.000000e+00, 6.071928e+02, 0.000000e+00,
+          0.000000e+00, 7.188560e+02, 1.852157e+02, 0.000000e+00,
+          0.000000e+00, 0.000000e+00, 1.000000e+00, 0.000000e+00] 
+
+P_rect_01: !!opencv-matrix
+   rows: 3
+   cols: 4
+   dt: d
+   data: [7.188560e+02, 0.000000e+00, 6.071928e+02, -3.861448e+02,
+          0.000000e+00, 7.188560e+02, 1.852157e+02,  0.000000e+00,
+          0.000000e+00, 0.000000e+00, 1.000000e+00,  0.000000e+00]  
+
+R_rect_00: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [ 9.999454e-01, 7.259129e-03, -7.519551e-03,
+          -7.292213e-03, 9.999638e-01, -4.381729e-03, 
+           7.487471e-03, 4.436324e-03,  9.999621e-01] 
+
+
+R_rect_01: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [ 9.996568e-01, -1.110284e-02, 2.372712e-02, 
+           1.099810e-02,  9.999292e-01, 4.539964e-03, 
+          -2.377585e-02, -4.277453e-03, 9.997082e-01] 
+
+
+velo_T_cam0: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [ 7.967514e-03, -9.999679e-01, -8.462264e-04, -1.377769e-02,
+          -2.771053e-03,  8.241710e-04, -9.999958e-01, -5.542117e-02,
+           9.999644e-01,  7.969825e-03, -2.764397e-03, -2.918589e-01,
+           0, 0, 0, 1]
+
+
+
+body_T_cam0: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [1, 0, 0, 0,
+          0, 1, 0, 0,
+          0, 0, 1, 0,
+          0, 0, 0, 1]
+
+body_T_cam1: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [1, 0, 0, 0.537165718864418,
+          0, 1, 0, 0,
+          0, 0, 1, 0,
+          0, 0, 0, 1]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
